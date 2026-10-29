@@ -7,6 +7,8 @@ export const MAX_HISTORY = 100
 export const HEALTH_CONCURRENCY = 6
 export const LINE_FAIL_THRESHOLD = 2
 export const LINE_FAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000
+// 解析页普遍靠 JS 二次渲染，did-finish-load 后需留时间再判断是否为空白页
+export const BLANK_PROBE_DELAY_MS = 1200
 
 export const DEFAULT_SETTINGS = settingsSchema.parse({})
 

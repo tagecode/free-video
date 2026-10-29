@@ -1,7 +1,7 @@
 import { api } from '@/lib/api'
 import { usePlayerStore } from '@/store/player'
 import { Loader2, MonitorPlay, RotateCw, Square } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 
 export function PlayerSurface(): React.JSX.Element {
@@ -10,25 +10,32 @@ export function PlayerSurface(): React.JSX.Element {
   const reload = usePlayerStore((state) => state.reload)
   const close = usePlayerStore((state) => state.close)
 
+  // 原生视图永远盖在 HTML 之上，加载中必须收起，否则会挡住"正在尝试线路"的进度提示
+  const isActive = status.state === 'playing'
+
+  const syncBounds = useCallback((): void => {
+    const element = containerRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    void api.player.setBounds({
+      x: rect.left,
+      y: rect.top,
+      width: rect.width,
+      height: rect.height
+    })
+  }, [])
+
+  // 只绑定一次：容器尺寸恒定，状态变化不该重建观察器，
+  // 更不该在清理时隐藏视图——那会在每次状态流转的瞬间把播放画面抹掉。
   useEffect(() => {
     const element = containerRef.current
     if (!element) return
 
     let frame = 0
 
-    const sync = (): void => {
-      const rect = element.getBoundingClientRect()
-      void api.player.setBounds({
-        x: rect.left,
-        y: rect.top,
-        width: rect.width,
-        height: rect.height
-      })
-    }
-
     const schedule = (): void => {
       cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(sync)
+      frame = requestAnimationFrame(syncBounds)
     }
 
     const observer = new ResizeObserver(schedule)
@@ -44,9 +51,14 @@ export function PlayerSurface(): React.JSX.Element {
       window.removeEventListener('scroll', schedule, true)
       void api.player.setVisible(false)
     }
-  }, [status.state])
+  }, [syncBounds])
 
-  const isActive = status.state === 'playing' || status.state === 'loading'
+  useEffect(() => {
+    // 视图可能是这次播放才创建的，显示前必须补一次真实尺寸，
+    // 否则主进程沿用 0×0，解析页 viewport 为 0，只剩声音没有画面。
+    if (isActive) syncBounds()
+    void api.player.setVisible(isActive)
+  }, [isActive, syncBounds])
 
   return (
     <div className="relative flex-1 overflow-hidden rounded-xl border bg-black">
