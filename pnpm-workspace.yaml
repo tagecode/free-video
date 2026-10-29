@@ -1,19 +1,4 @@
 onlyBuiltDependencies:
-  - '"'
-  - ','
-  - '-'
-  - '3'
-  - '['
-  - ']'
-  - b
-  - c
-  - e
+  - electron
   - electron-winstaller
-  - i
-  - l
-  - n
-  - o
-  - q
-  - r
-  - s
-  - t
+  - esbuild

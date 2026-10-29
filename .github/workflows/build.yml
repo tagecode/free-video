@@ -1,0 +1,78 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 构建（${{ matrix.os }}）
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, flag: --linux }
+          - { os: windows-latest, flag: --win }
+          - { os: macos-latest, flag: --mac }   # 按 mac.target 声明的 arch 产出 x64 + arm64 各一套
+    runs-on: ${{ matrix.os }}
+    env:
+      # 未配置证书时跳过 macOS 代码签名，避免 CI 卡在钥匙串查找
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 缓存 Electron 与 electron-builder（Unix）
+        if: runner.os != 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: 缓存 Electron 与 electron-builder（Windows）
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.LOCALAPPDATA }}\electron\Cache
+            ${{ env.LOCALAPPDATA }}\electron-builder\Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      # pnpm build = typecheck + electron-vite build（main / preload / renderer）
+      - run: pnpm build
+
+      - run: pnpm exec electron-builder ${{ matrix.flag }} --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ runner.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.yml
+            dist/*.blockmap
+          if-no-files-found: warn
+          retention-days: 14

@@ -26,7 +26,7 @@ if (!gotLock) {
   })
 
   app.whenReady().then(() => {
-    electronApp.setAppUserModelId('com.freevideo.app')
+    electronApp.setAppUserModelId('com.tagecode.freevideo')
 
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window)

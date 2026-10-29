@@ -1,10 +1,11 @@
-appId: com.electron.app
-productName: free-video
+appId: com.tagecode.freevideo
+productName: Free Video
 directories:
   buildResources: build
+  output: dist
 files:
   - '!**/.vscode/*'
-  - '!src/*'
+  - '!src/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
@@ -13,33 +14,47 @@ asarUnpack:
   - resources/**
 win:
   executableName: free-video
+  target:
+    - target: nsis
+      arch: [x64]
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: FreeVideo-${version}-win-${arch}.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  artifactName: FreeVideo-${version}-mac-${arch}.${ext}
   entitlementsInherit: build/entitlements.mac.plist
+  # ad-hoc 签名：arm64 包不做整包签名会被 macOS 判定"已损坏"（可执行文件被 linker 预签名，
+  # 但缺少 CodeResources 资源封条）。接入 Developer ID 证书后，此行改为证书名或删除。
+  identity: '-'
+  notarize: false
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: FreeVideo-${version}-mac-${arch}.${ext}
 linux:
+  executableName: free-video
+  maintainer: tagecode
+  category: AudioVideo
   target:
     - AppImage
-    - snap
     - deb
-  maintainer: electronjs.org
-  category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: FreeVideo-${version}-linux-x86_64.${ext}
+deb:
+  artifactName: FreeVideo-${version}-linux-amd64.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  provider: github
+  releaseType: release
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

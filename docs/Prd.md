@@ -247,66 +247,33 @@ favorites.json  // 收藏
 
 ### 7.1 工作流
 
-```yaml
-# .github/workflows/build.yml
-name: build
-on:
-  push: { branches: [main] }
-  pull_request:
-  workflow_dispatch:
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint && pnpm typecheck
-      - run: pnpm exec electron-builder --${os-flag} --publish never
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.os }}
-          path: dist/**
-```
+两个工作流已落在 `.github/workflows/`，随仓库一起维护。
 
-```yaml
-# .github/workflows/release.yml  —— 打 tag v* 时触发
-name: release
-on:
-  push: { tags: ['v*'] }
-permissions: { contents: write }
-jobs:
-  release:
-    strategy:
-      matrix:
-        include:
-          - { os: windows-latest, flag: --win }
-          - { os: macos-latest,   flag: --mac }   # 一次产出 x64 + arm64
-          - { os: ubuntu-latest,  flag: --linux }
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec electron-builder ${{ matrix.flag }} --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+**`build.yml` —— 每次 push / PR 跑三平台构建**
+
+- 触发：`push`（main）、`pull_request`、`workflow_dispatch`；并发组按 ref 自动取消旧运行。
+- 矩阵：`ubuntu-latest → --linux`、`windows-latest → --win`、`macos-latest → --mac`，`fail-fast: false`，任一平台失败不影响其余两平台。
+- 步骤：`checkout → pnpm/action-setup（版本取自 package.json 的 packageManager）→ setup-node 22 + pnpm 缓存 → 缓存 Electron / electron-builder → pnpm install --frozen-lockfile → pnpm lint → pnpm build → electron-builder <flag> --publish never → upload-artifact`。
+- 产物以 `dist-{OS}` 命名保留 14 天，只收集安装包与 `.yml` / `.blockmap` 更新元数据。
+- 设置 `CSC_IDENTITY_AUTO_DISCOVERY=false`：未配置证书时跳过 macOS 签名查找，避免构建卡在钥匙串。
+
+**`release.yml` —— 打 `v*` tag 发布**
+
+- 触发：`push: tags: ['v*']`，`permissions: contents: write` 供 electron-builder 创建 Release。
+- 前置校验：tag 去掉 `v` 后必须等于 `package.json` 的 `version`，不一致直接失败。
+- 三平台矩阵同上，最后一步 `electron-builder <flag> --publish always`，`GH_TOKEN` 使用内置 `secrets.GITHUB_TOKEN`。
+
+> 本地复现：`pnpm build && pnpm exec electron-builder --mac --publish never`（其余平台同理）。
+> 国内网络若在打包阶段卡在下载 `dmgbuild` / `nsis` 等二进制（`Timeout awaiting 'request'`），设置 `ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/` 即可绕过，CI 位于境外无需此步。
 
 ### 7.2 发布约定
 
 - **版本**：SemVer，`package.json` 为唯一来源；`git tag v1.2.3` 触发发布。
-- **产物命名**：`FreeVideo-{version}-win-x64.exe`、`FreeVideo-{version}-mac-arm64.dmg`、`FreeVideo-{version}-mac-x64.dmg`、`FreeVideo-{version}-linux-x86_64.AppImage`、`FreeVideo-{version}-linux-amd64.deb`。
+- **产物命名**：`FreeVideo-{version}-win-{arch}.exe`、`FreeVideo-{version}-mac-{arch}.dmg`、`FreeVideo-{version}-mac-{arch}.zip`（自动更新用）、`FreeVideo-{version}-linux-x86_64.AppImage`、`FreeVideo-{version}-linux-amd64.deb`。
+- **macOS 双架构**：`mac.target` 对 `dmg` / `zip` 均声明 `arch: [x64, arm64]`，一次 `--mac` 构建产出 Intel 与 Apple Silicon 两套包（4 个产物），`latest-mac.yml` 同时登记两者，自动更新按用户机器架构各自匹配。
 - **更新源**：`electron-builder.yml` 的 `publish` 由 `generic` 改为 `provider: github`，`releaseType: release`；`electron-updater` 与之联动。
-- **签名**：首版 macOS 不签名（用户需右键打开），Windows 不签名（SmartScreen 提示）；有证书后通过 `CSC_LINK` / `CSC_KEY_PASSWORD` / `APPLE_ID` 等 secrets 接入。
+- **签名**：首版 macOS 走 ad-hoc 签名（`mac.identity: '-'`），Windows 不签名（SmartScreen 提示）。ad-hoc 不是为了过 Gatekeeper，而是绕开 Apple Silicon 的结构性故障：arm64 可执行文件由 linker 预签名却没有 `CodeResources` 资源封条，整包不签会被判定"已损坏"，连"右键打开"都无法绕过。签名后用户仍会看到"无法验证开发者"，需右键 → 打开。启用 hardenedRuntime 时须在 `build/entitlements.mac.plist` 放开 `com.apple.security.cs.disable-library-validation`，否则 Electron 加载框架会被库校验拦下。
+- **接入正式证书**：通过 `CSC_LINK` / `CSC_KEY_PASSWORD` / `APPLE_ID` 等 secrets 接入 Developer ID 后，把 `mac.identity` 改为证书名（或删除该行）、`notarize` 改为 `true`，即可获得公证与双击直开体验。
 - **缓存**：`~/.cache/electron`、`~/.cache/electron-builder` 用 `actions/cache` 复用，缩短构建时间。
 
 ### 7.3 分支与提交
