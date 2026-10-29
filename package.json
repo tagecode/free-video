@@ -1,10 +1,25 @@
 {
   "name": "free-video",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "跨平台 VIP 视频解析播放客户端，支持线路自维护与失败自动切换",
   "main": "./out/main/index.mjs",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "tagecode",
+  "homepage": "https://github.com/tagecode/free-video",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tagecode/free-video.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tagecode/free-video/issues"
+  },
+  "keywords": [
+    "electron",
+    "video",
+    "vip-video",
+    "parser",
+    "cross-platform"
+  ],
   "packageManager": "pnpm@10.11.0",
   "scripts": {
     "format": "prettier --write .",
