@@ -324,54 +324,15 @@ favorites.json  // 收藏
 
 ---
 
-## 附录 A：内置线路库（来自参考项目，需上线前复检）
+## 附录 A：内置线路库
 
-> 说明：以下接口原样摘录自参考项目，绝大多数为个人分享的第三方服务，**可用性不做保证**。内置数据以 `resources/lines.default.json` 形式随包发布，此处仅作源清单留存。
+> 说明：内置线路随包以 `resources/lines.default.json` 发布。参考项目原样摘录的 43 条接口已于 2026-10-29 用真实渲染逐条复检，除下表外全部失效（域名停放出售、Cloudflare 拦截、404/5xx、连接超时），已从内置库移除。2026-10-30 又从 `v.vps6.cn` 的接口列表补充，同样逐条渲染复检。
 
-| # | 名称 | 接口地址 | 拼接模式 |
-| --- | --- | --- | --- |
-| 1 | 超清 | `http://api.baiyug.cn/vip/index.php?url=` | prefix |
-| 2 | 线路1 | `http://www.vipjiexi.com/yun.php?url=` | prefix |
-| 3 | 线路2 | `http://api.1008net.com/v.php?url=` | prefix |
-| 4 | 线路3 | `http://api.nepian.com/ckparse/?url=` | prefix |
-| 5 | 线路4 | `http://player.jidiaose.com/supapi/iframe.php?v=` | prefix |
-| 6 | 线路5 | `http://api.pucms.com/index.php?url=` | prefix |
-| 7 | 线路6 | `http://api.wlzhan.com/sudu/?url=` | prefix |
-| 8 | 线路7 | `http://www.0335haibo.com/yun.php?url=` | prefix |
-| 9 | 线路8 | `http://yun.mt2t.com/yun?url=` | prefix |
-| 10 | 线路9 | `http://y.mt2t.com/lines?url=` | prefix |
-| 11 | 线路11 | `http://www.sfsft.com/video.php?url=` | prefix |
-| 12 | 线路12 | `http://www.82190555.com/video.php?url=` | prefix |
-| 13 | 线路13 | `http://2.jx.72du.com/video.php?url=` | prefix |
-| 14 | 线路14 | `http://www.97panda.com/kkflv/index.php?url=` | prefix |
-| 15 | 线路15 | `http://jx.vgoodapi.com/jx.php?url=` | prefix |
-| 16 | 线路16 | `http://www.dgua.xyz/webcloud/?url=` | prefix |
-| 17 | 线路17 | `http://api.91exp.com/svip/?url=` | prefix |
-| 18 | 线路18 | `http://vip.jlsprh.com/index.php?url=` | prefix |
-| 19 | 线路19 | `http://api.xfsub.com/index.php?url=` | prefix |
-| 20 | 线路20 | `http://jiexi.071811.cc/jx.php?url=` | prefix |
-| 21 | 线路21 | `http://jiexi.92fz.cn/player/vip.php?url=` | prefix |
-| 22 | 线路23 | `http://api.662820.com/xnflv/index.php?url=` | prefix |
-| 23 | 线路24 | `http://www.82190555.com/index/qqvod.php?url=` | prefix |
-| 24 | 线路25 | `http://yyygwz.com/index.php?url=` | prefix |
-| 25 | 线路27 | `http://jx.api.163ren.com/vod.php?url=` | prefix |
-| 26 | 线路28 | `http://lookxw.com/yingzi/?url=` | prefix |
-| 27 | 线路29 | `http://www.0335haibo.com/tong.php?url=` | prefix |
-| 28 | 线路30 | `http://www.wmxz.wang/video.php?url=` | prefix |
-| 29 | 线路31 | `http://api.97kn.com/?url=` | prefix |
-| 30 | 线路32 | `https://aikanapi.duapp.com/odflv105/index.php?url=` | prefix |
-| 31 | 线路33 | `http://v.buy360.vip/wwcx/index.php?url=` | prefix |
-| 32 | 线路34 | `http://api.lequgirl.com/?url=` | prefix |
-| 33 | 线路35 | `https://jxapi.nepian.com/ckparse/?url=` | prefix |
-| 34 | 线路36 | `http://91k.co/play.php?url=` | prefix |
-| 35 | 线路37 | `http://www.52jiexi.com/yun.php?url=` | prefix |
-| 36 | 线路38 | `http://mt2t.com/yun?url=` | prefix |
-| 37 | 线路39 | `http://000o.cc/jx/ty.php?url=` | prefix |
-| 38 | 线路41 | `http://vipjiexi.com/vip.php?url=` | prefix |
-| 39 | 线路43 | `http://jx.ck921.com/?url=` | prefix |
-| 40 | 线路44 | `http://s1y2.com/?url=` | prefix |
-| 41 | 线路45 | `http://www.ou522.cn/t2/1.php?url=` | prefix |
-| 42 | 线路46 | `http://jx.xuanpianwang.com/parse?url=` | prefix |
-| 43 | 线路47 | `https://apiv.ga/magnet/` | template（磁力检索，非视频解析，默认禁用） |
+| # | 名称 | 接口地址 | 拼接模式 | 复检结果 |
+| --- | --- | --- | --- | --- |
+| 1 | 线路 OK | `https://video.isyour.love/player/getplayer?url=` | prefix | 可播：返回"邦宁云播"解析页，含 8 个候选 iframe |
+| 2 | 无广告视频解析 | `https://jx.m3u8.tv/jiexi/?url=` | prefix | 可播：内层 Artplayer，video 1920×818 |
+| 3 | 直接搜片名专用 | `https://z1.m1907.top/?jx=` | prefix | 可播：内层 video 1920×818，实测播放进度推进 |
+| 4 | 线路一 | `https://bd.jx.cn/?url=` | prefix | 可播：三层 iframe 后落到独立播放器，video 1920×1080 |
 
-> 参考项目中的"线路22/26/40/42/48"为重复条目，已去重。
+> `v.vps6.cn` 列表中另有 5 条未收录：`jx.202617.xyz` 撞 Cloudflare 人机校验、`free.maccms.xyz` 返回"无法解析视频"、`jx.playerjy.com` 超时、`jx.xymp4.cc` 已停站、`z1.im1907.top` 内层未加载出播放器。失效条目不再留存。
