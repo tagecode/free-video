@@ -25,18 +25,18 @@ jobs:
       # 未配置证书时跳过 macOS 代码签名，避免 CI 卡在钥匙串查找
       CSC_IDENTITY_AUTO_DISCOVERY: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
 
       - name: 缓存 Electron 与 electron-builder（Unix）
         if: runner.os != 'Windows'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/electron
@@ -47,7 +47,7 @@ jobs:
 
       - name: 缓存 Electron 与 electron-builder（Windows）
         if: runner.os == 'Windows'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ${{ env.LOCALAPPDATA }}\electron\Cache
@@ -63,7 +63,7 @@ jobs:
 
       - run: pnpm exec electron-builder ${{ matrix.flag }} --publish never
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-${{ runner.os }}
           path: |
