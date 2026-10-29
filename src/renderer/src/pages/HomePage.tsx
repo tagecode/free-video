@@ -1,6 +1,6 @@
 import { isHttpUrl } from '@shared/join-url'
 import { platformLabel } from '@shared/platform'
-import { Loader2, Play } from 'lucide-react'
+import { Loader2, Play, RotateCw, Square } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { PlayerSurface } from '@/components/PlayerSurface'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,9 @@ export function HomePage(): React.JSX.Element {
   const lines = useLinesStore((state) => state.lines)
   const open = usePlayerStore((state) => state.open)
   const status = usePlayerStore((state) => state.status)
+  const reload = usePlayerStore((state) => state.reload)
+  const close = usePlayerStore((state) => state.close)
+  const setOverlayOpen = usePlayerStore((state) => state.setOverlayOpen)
   const settings = useSettingsStore((state) => state.settings)
   const patchSettings = useSettingsStore((state) => state.patch)
   const [lineId, setLineId] = useState('')
@@ -34,6 +37,7 @@ export function HomePage(): React.JSX.Element {
       '')
 
   const busy = status.state === 'loading'
+  const playing = status.state === 'playing'
 
   const handlePlay = async (): Promise<void> => {
     setError(null)
@@ -52,6 +56,20 @@ export function HomePage(): React.JSX.Element {
     }
   }
 
+  const handleLineChange = (nextLineId: string): void => {
+    setLineId(nextLineId)
+    if (!settings.switchLineOnSelect || status.state !== 'playing' || !status.videoUrl) {
+      return
+    }
+    setError(null)
+    void patchSettings({ lastLineId: nextLineId })
+    void open(status.videoUrl, nextLineId).then((failure) => {
+      if (failure) {
+        setError(failure)
+      }
+    })
+  }
+
   return (
     <div className="flex h-full flex-col gap-4 p-6">
       <div className="flex flex-col gap-3">
@@ -66,7 +84,11 @@ export function HomePage(): React.JSX.Element {
             className="h-10 flex-1"
           />
 
-          <Select value={currentLineId} onValueChange={setLineId}>
+          <Select
+            value={currentLineId}
+            onValueChange={handleLineChange}
+            onOpenChange={(isOpen) => setOverlayOpen(isOpen)}
+          >
             <SelectTrigger className="h-10 w-44">
               <SelectValue placeholder="选择线路" />
             </SelectTrigger>
@@ -83,6 +105,29 @@ export function HomePage(): React.JSX.Element {
             {busy ? <Loader2 className="animate-spin" /> : <Play />}
             {busy ? '解析中' : '开始播放'}
           </Button>
+
+          {playing && (
+            <>
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-10"
+                onClick={() => void reload()}
+                title="重新加载"
+              >
+                <RotateCw />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-10"
+                onClick={() => void close()}
+                title="关闭播放"
+              >
+                <Square />
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">

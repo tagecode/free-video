@@ -91,6 +91,16 @@ export function SettingsPage(): React.JSX.Element {
           />
         </Row>
         <Separator />
+        <Row
+          title="选中线路后立即切换"
+          description="播放中在下拉框换线路时直接重新解析；关闭则需再点「开始播放」"
+        >
+          <Switch
+            checked={settings.switchLineOnSelect}
+            onCheckedChange={(value) => set('switchLineOnSelect', value)}
+          />
+        </Row>
+        <Separator />
         <Row title="最大尝试线路数" description="自动降级时最多尝试的线路数量（1-10）">
           <Input
             type="number"

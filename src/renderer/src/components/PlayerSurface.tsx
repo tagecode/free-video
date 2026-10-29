@@ -1,17 +1,17 @@
 import { api } from '@/lib/api'
 import { usePlayerStore } from '@/store/player'
-import { Loader2, MonitorPlay, RotateCw, Square } from 'lucide-react'
+import { Loader2, MonitorPlay } from 'lucide-react'
 import { useCallback, useEffect, useRef } from 'react'
-import { Button } from './ui/button'
 
 export function PlayerSurface(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const status = usePlayerStore((state) => state.status)
-  const reload = usePlayerStore((state) => state.reload)
-  const close = usePlayerStore((state) => state.close)
+  const overlayOpen = usePlayerStore((state) => state.overlayOpen)
 
-  // 原生视图永远盖在 HTML 之上，加载中必须收起，否则会挡住"正在尝试线路"的进度提示
-  const isActive = status.state === 'playing'
+  // 原生视图永远盖在 HTML 之上，加载中必须收起，否则会挡住"正在尝试线路"的进度提示；
+  // 下拉菜单等浮层打开时同样要收起，否则选项被播放器整块遮住、点不中。
+  const playing = status.state === 'playing'
+  const isActive = playing && !overlayOpen
 
   const syncBounds = useCallback((): void => {
     const element = containerRef.current
@@ -68,7 +68,7 @@ export function PlayerSurface(): React.JSX.Element {
         style={{ visibility: isActive ? 'hidden' : 'visible' }}
       />
 
-      {!isActive && (
+      {!playing && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
           <MonitorPlay className="size-12 opacity-40" />
           <p className="text-sm">
@@ -84,17 +84,6 @@ export function PlayerSurface(): React.JSX.Element {
           <Loader2 className="size-8 animate-spin" />
           <p className="text-sm">正在尝试线路（第 {status.attempt ?? 1} 次）</p>
           <p className="max-w-[80%] truncate text-xs text-muted-foreground">{status.playUrl}</p>
-        </div>
-      )}
-
-      {status.state === 'playing' && (
-        <div className="absolute top-2 right-2 flex gap-2">
-          <Button size="icon" variant="secondary" onClick={() => void reload()} title="重新加载">
-            <RotateCw />
-          </Button>
-          <Button size="icon" variant="secondary" onClick={() => void close()} title="关闭播放">
-            <Square />
-          </Button>
         </div>
       )}
     </div>

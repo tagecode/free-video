@@ -44,6 +44,8 @@ export const settingsSchema = z.object({
   theme: themeModeSchema.default('system'),
   autoFallback: z.boolean().default(true),
   maxFallbackAttempts: z.number().int().min(1).max(10).default(5),
+  // 播放中在下拉框换线路是否立即重新解析；默认关闭，避免误触打断正在看的视频
+  switchLineOnSelect: z.boolean().default(false),
   playTimeoutMs: z.number().int().min(5000).max(60000).default(15000),
   healthTimeoutMs: z.number().int().min(3000).max(20000).default(8000),
   healthCheckIntervalMs: z.number().int().min(0).default(0),
