@@ -15,11 +15,37 @@ class PlayerService {
   // 渲染进程上报的 bounds 可能早于视图创建，先存下来，建视图时立即套用，
   // 否则视图会以 0×0 存活，解析页 viewport 为 0，画面元素被压成 0 宽而只剩声音。
   private lastBounds: Rect = { x: 0, y: 0, width: 0, height: 0 }
+  // 解析页里的播放器点全屏时，Chromium 只会发事件，不会自己改变窗口，
+  // 主进程不接管的话按钮就是点了没反应。
+  private htmlFullscreen = false
+  private fullscreenRetry: NodeJS.Timeout | null = null
 
   attach(window: BrowserWindow): void {
     this.window = window
     const playerSession = session.fromPartition(PLAYER_PARTITION)
-    playerSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
+    // 只放行全屏：解析页播放器的全屏按钮依赖它，其余权限一律拒绝。
+    playerSession.setPermissionRequestHandler((_contents, permission, callback) => {
+      callback(permission === 'fullscreen')
+    })
+
+    // 用户用窗口自己的方式退出全屏（绿灯键 / 菜单 / Esc）时，解析页仍以为自己在全屏，
+    // 不主动通知它退出，下次再点全屏按钮就没反应了。
+    window.on('leave-full-screen', () => {
+      if (!this.htmlFullscreen) return
+      this.htmlFullscreen = false
+      this.view?.setBounds(this.toBounds(this.lastBounds))
+      void this.exitHtmlFullscreen()
+    })
+  }
+
+  private async exitHtmlFullscreen(): Promise<void> {
+    const contents = this.view?.webContents
+    if (!contents || contents.isDestroyed()) return
+    try {
+      await contents.executeJavaScript('document.exitFullscreen().catch(() => {})')
+    } catch {
+      /* 页面已卸载等情况忽略 */
+    }
   }
 
   private ensureView(): WebContentsView {
@@ -29,6 +55,7 @@ class PlayerService {
     if (!this.window) {
       throw new Error('播放器尚未绑定主窗口')
     }
+    const window = this.window
 
     const view = new WebContentsView({
       webPreferences: {
@@ -52,6 +79,32 @@ class PlayerService {
       if (!/^https?:/i.test(url)) {
         event.preventDefault()
       }
+    })
+
+    // 解析页的全屏按钮走 HTML5 Fullscreen API，只有事件、没有窗口行为。
+    // 接管后让窗口真全屏，并把原生视图铺满整个内容区盖住应用自身的界面。
+    view.webContents.on('enter-html-full-screen', () => {
+      this.htmlFullscreen = true
+      view.setBounds(this.fullBounds())
+      window.setFullScreen(true)
+      // macOS 会吞掉紧挨着上一次进出全屏的切换请求（点了全屏却没反应就是这个），
+      // 稍后确认窗口真的全屏了没有，没有就再要一次。
+      if (this.fullscreenRetry) clearTimeout(this.fullscreenRetry)
+      this.fullscreenRetry = setTimeout(() => {
+        this.fullscreenRetry = null
+        if (this.htmlFullscreen && !window.isFullScreen()) {
+          window.setFullScreen(true)
+        }
+      }, 800)
+    })
+    view.webContents.on('leave-html-full-screen', () => {
+      if (this.fullscreenRetry) {
+        clearTimeout(this.fullscreenRetry)
+        this.fullscreenRetry = null
+      }
+      this.htmlFullscreen = false
+      view.setBounds(this.toBounds(this.lastBounds))
+      window.setFullScreen(false)
     })
 
     this.window.contentView.addChildView(view)
@@ -185,6 +238,15 @@ class PlayerService {
 
   close(): PlayResult {
     this.attempt += 1
+    if (this.htmlFullscreen) {
+      // 全屏状态下直接收掉视图会把窗口留在全屏里，先退出全屏再关。
+      if (this.fullscreenRetry) {
+        clearTimeout(this.fullscreenRetry)
+        this.fullscreenRetry = null
+      }
+      this.htmlFullscreen = false
+      this.window?.setFullScreen(false)
+    }
     if (this.view && !this.view.webContents.isDestroyed()) {
       this.view.setVisible(false)
       this.view.webContents.stop()
@@ -206,9 +268,19 @@ class PlayerService {
     }
   }
 
+  private fullBounds(): Electron.Rectangle {
+    if (!this.window) {
+      return { x: 0, y: 0, width: 0, height: 0 }
+    }
+    const { width, height } = this.window.getContentBounds()
+    return { x: 0, y: 0, width, height }
+  }
+
   setBounds(rect: Rect): void {
     this.lastBounds = rect
-    this.view?.setBounds(this.toBounds(rect))
+    // 全屏期间渲染进程仍会按播放器容器上报尺寸，直接套用会让画面缩回一半，
+    // 所以这里记住新尺寸但对外始终用整窗 bounds。
+    this.view?.setBounds(this.htmlFullscreen ? this.fullBounds() : this.toBounds(rect))
   }
 
   setVisible(visible: boolean): void {
