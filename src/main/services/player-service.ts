@@ -4,6 +4,7 @@ import { buildParseUrl } from '@shared/join-url'
 import { NOTIFY } from '@shared/ipc'
 import type { OpenPlayerInput, PlayResult, PlayerStatus, Rect } from '@shared/types'
 import { logger } from './logger'
+import { registerShortcuts } from '../shortcuts'
 
 type LoadOutcome = 'ok' | 'fail'
 
@@ -80,6 +81,7 @@ class PlayerService {
         event.preventDefault()
       }
     })
+    registerShortcuts(window, view.webContents)
 
     // 解析页的全屏按钮走 HTML5 Fullscreen API，只有事件、没有窗口行为。
     // 接管后让窗口真全屏，并把原生视图铺满整个内容区盖住应用自身的界面。

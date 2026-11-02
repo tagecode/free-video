@@ -3,6 +3,7 @@ import { BrowserWindow, shell } from 'electron'
 import { APP_NAME } from '@shared/constants'
 import { is } from '@electron-toolkit/utils'
 import { getWindowState, saveWindowState } from './services/window-state'
+import { registerShortcuts } from './shortcuts'
 
 export function createMainWindow(): BrowserWindow {
   const state = getWindowState()
@@ -31,6 +32,8 @@ export function createMainWindow(): BrowserWindow {
   }
 
   window.on('ready-to-show', () => window.show())
+
+  registerShortcuts(window, window.webContents)
 
   window.on('close', () => saveWindowState(window))
 
