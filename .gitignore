@@ -9,3 +9,4 @@ dev-app-update.yml
 # 本地工具状态
 .codegraph/
 .spec-workflow/
+.cursor/

@@ -8,13 +8,23 @@
 
 ---
 
+## 界面预览
+
+| 浅色                                        | 深色                                       |
+| ------------------------------------------- | ------------------------------------------ |
+| ![首页（浅色）](docs/images/home-light.png) | ![首页（深色）](docs/images/home-dark.png) |
+
+| 线路管理                           | 设置                              |
+| ---------------------------------- | --------------------------------- |
+| ![线路管理](docs/images/lines.png) | ![设置](docs/images/settings.png) |
+
 ## 简介
 
 Free Video 把网页版的「视频解析」做成一个可安装、可自维护的桌面应用。它本身不存储、不代理任何视频内容，只做一件事：把你粘贴的视频页地址交给第三方解析接口，再把解析结果渲染在一个隔离的 `WebContentsView` 里。
 
 相比直接用浏览器开解析站，它解决了四件事：
 
-- **线路可管理** —— 内置线路可启用/禁用/排序，也能自己加、导入导出；
+- **线路可管理** —— 内置线路可启用/禁用，也能自己加、导入导出；顺序决定默认选择与自动降级；
 - **失效可自愈** —— 当前线路加载失败或超时时，自动按顺序落到下一条；
 - **失败可诊断** —— 一键批量探测线路可用性，显示每条的响应耗时；
 - **离线可留存** —— 播放历史与收藏落盘，重启不丢。
@@ -31,11 +41,11 @@ Free Video 把网页版的「视频解析」做成一个可安装、可自维护
 
 ### 线路管理
 
-- 内置 42 条线路，随应用发布，升级不会覆盖你的改动
-- 启用 / 禁用 / 置顶 / 上移 / 下移，顺序影响默认选择与自动切换
-- 自定义线路：前缀式（`前缀 + 地址`）或模板式（`{url}` 占位符），保存前可预览拼接结果
+- 内置线路随应用发布（当前 4 条），升级不会覆盖你的改动；支持从 JSON 导入批量扩充
+- 启用 / 禁用线路，顺序决定默认选择与自动降级顺序
+- 自定义线路：前缀式（`前缀 + 地址`）或模板式（`{url}` 占位符）
 - 线路配置导出为 JSON、从 JSON 导入、一键恢复内置线路默认状态
-- 一键健康检测：并发 6 条探测，展示 可用 / 失败 / 超时 与响应耗时
+- 一键健康检测：并发 3 条真实渲染探测，展示 可用 / 失败 / 超时 与响应耗时
 
 ### 数据与设置
 
@@ -49,13 +59,13 @@ Free Video 把网页版的「视频解析」做成一个可安装、可自维护
 
 前往 [Releases](https://github.com/tagecode/free-video/releases) 下载对应平台的安装包：
 
-| 平台 | 文件 | 说明 |
-| --- | --- | --- |
-| Windows x64 | `FreeVideo-{version}-win-x64.exe` | NSIS 安装包 |
-| macOS Intel | `FreeVideo-{version}-mac-x64.dmg` | macOS 12+ |
-| macOS Apple Silicon | `FreeVideo-{version}-mac-arm64.dmg` | macOS 12+，M 系列芯片 |
-| Linux x64 | `FreeVideo-{version}-linux-x86_64.AppImage` | 免安装，`chmod +x` 后直接运行 |
-| Linux x64 | `FreeVideo-{version}-linux-amd64.deb` | Debian / Ubuntu |
+| 平台                | 文件                                        | 说明                          |
+| ------------------- | ------------------------------------------- | ----------------------------- |
+| Windows x64         | `FreeVideo-{version}-win-x64.exe`           | NSIS 安装包                   |
+| macOS Intel         | `FreeVideo-{version}-mac-x64.dmg`           | macOS 12+                     |
+| macOS Apple Silicon | `FreeVideo-{version}-mac-arm64.dmg`         | macOS 12+，M 系列芯片         |
+| Linux x64           | `FreeVideo-{version}-linux-x86_64.AppImage` | 免安装，`chmod +x` 后直接运行 |
+| Linux x64           | `FreeVideo-{version}-linux-amd64.deb`       | Debian / Ubuntu               |
 
 > **macOS 首次打开**：当前版本未购买 Apple 开发者证书，仅做 ad-hoc 签名，系统会提示「无法验证开发者」。请**右键点击应用 → 打开**，或到「系统设置 → 隐私与安全性」中点击「仍要打开」。不要双击，双击会被拦截。
 
@@ -77,7 +87,7 @@ Free Video 把网页版的「视频解析」做成一个可安装、可自维护
 绝大多数解析站的响应带有 `X-Frame-Options` 或 CSP `frame-ancestors` 限制，普通 iframe 会被浏览器拒绝渲染。`WebContentsView` 以独立 frame 加载，不受该限制。
 
 **数据存在哪里？**
-`electron-store` 写在系统的用户数据目录：Windows 为 `%APPDATA%\free-video`，macOS 为 `~/Library/Application Support/free-video`，Linux 为 `~/.config/free-video`。纯 JSON 文件，卸载前可自行备份。
+`electron-store` 写在系统的用户数据目录，目录名取自 `productName`：Windows 为 `%APPDATA%\Free Video`，macOS 为 `~/Library/Application Support/Free Video`，Linux 为 `~/.config/Free Video`（用 `pnpm dev` 运行时为 `free-video`）。纯 JSON 文件，卸载前可自行备份；设置页「关于」里也能看到当前实际路径。
 
 **升级后我的线路配置会丢吗？**
 不会。内置线路以只读形式随包分发，用户对内置线路的启用状态、排序、改名与自定义线路单独存放，升级只更新只读部分。
@@ -142,14 +152,14 @@ docs/              # 产品需求、技术架构文档
 
 ### 技术栈
 
-| 层 | 选型 |
-| --- | --- |
-| 运行时 | Electron 44 |
-| 构建 | electron-vite 6（Vite 8）、electron-builder 26 |
-| 界面 | React 19、TypeScript 5.9（strict）、Tailwind CSS 4、Radix UI（shadcn 风格源码内联组件） |
-| 状态与路由 | Zustand 5、React Router 7（HashRouter） |
-| 存储 | electron-store 12，zod 4 统一校验 |
-| 日志 / 更新 | electron-log 5、electron-updater 6 |
+| 层          | 选型                                                                                    |
+| ----------- | --------------------------------------------------------------------------------------- |
+| 运行时      | Electron 44                                                                             |
+| 构建        | electron-vite 6（Vite 8）、electron-builder 26                                          |
+| 界面        | React 19、TypeScript 5.9（strict）、Tailwind CSS 4、Radix UI（shadcn 风格源码内联组件） |
+| 状态与路由  | Zustand 5、React Router 7（HashRouter）                                                 |
+| 存储        | electron-store 12，zod 4 统一校验                                                       |
+| 日志 / 更新 | electron-log 5、electron-updater 6                                                      |
 
 ## 文档
 
@@ -168,11 +178,12 @@ docs/              # 产品需求、技术架构文档
 
 ## 贡献
 
-欢迎提交 Issue 与 Pull Request。
+欢迎提交 Issue 与 Pull Request，完整流程见 [贡献指南](CONTRIBUTING.md)。
 
 - 提交前请确保 `pnpm lint` 与 `pnpm typecheck` 通过（CI 会校验三平台构建）；
 - 提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/)，如 `feat: 支持线路分组`、`fix: 修复全屏后 bounds 未同步`；
-- **新增或更新内置线路**是最有价值的贡献之一，请附上实际测试结果（可用性、响应耗时、实测平台）。
+- **新增或更新内置线路**是最有价值的贡献之一，请附上实际测试结果（可用性、响应耗时、实测平台）；
+- 安全问题请勿公开提交，按 [安全策略](SECURITY.md) 私密报告。
 
 ## 许可证
 

@@ -1,0 +1,78 @@
+name: 线路反馈
+description: 某条解析线路不可用、返回空白页或只出广告
+title: '[线路] '
+labels: ['line']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        解析线路来自互联网上公开分享的第三方服务，失效是常态。请尽量填写实测信息，否则很难判断是线路问题还是特定内容/地区的问题。
+
+  - type: input
+    id: line
+    attributes:
+      label: 线路名称或地址
+      description: 线路页「名称」列的内容；自定义线路请同时给出解析地址
+      placeholder: 线路 OK（https://video.isyour.love/player/getplayer?url=）
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本
+      description: 设置页「关于」中显示的版本号
+    validations:
+      required: true
+
+  - type: dropdown
+    id: region
+    attributes:
+      label: 网络环境
+      description: 部分地区或运营商会对这类站点做拦截，这有助于排除网络因素
+      options:
+        - 中国大陆
+        - 中国大陆（已启用代理）
+        - 港澳台地区
+        - 海外
+        - 其他 / 不确定
+    validations:
+      required: true
+
+  - type: input
+    id: video-url
+    attributes:
+      label: 测试用的视频页地址
+      description: 请给出可以稳定复现的播放页，不要用带时效或需要登录的地址
+      placeholder: https://v.qq.com/x/cover/xxx.html
+    validations:
+      required: true
+
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: 现象
+      options:
+        - 播放区一直空白
+        - 加载后超时
+        - 显示错误页 / 404
+        - 能播放但有阻断广告
+        - 能播放但没有声音 / 画质异常
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: health
+    attributes:
+      label: 健康检测结果
+      description: 线路页点击该行「检测」后显示的状态与延迟，例如「不可用 / —」「超时 / —」「可用 / 1352 ms」
+      placeholder: 可用 / 1352 ms
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明（可选）
+      description: 截图、在浏览器里直接打开该解析地址的结果、其他线路是否正常等

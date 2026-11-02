@@ -1,12 +1,12 @@
 # Free Video · 技术架构文档
 
-| 项目 | 内容 |
-| --- | --- |
-| 文档版本 | v1.0 |
-| 编写日期 | 2026-10-29 |
-| 关联文档 | [需求文档 PRD](./Prd.md) |
-| 技术栈 | Electron 44 · TypeScript 5.9 · React 19 · Vite 8(electron-vite 6) · Tailwind CSS 4 · shadcn/ui |
-| 构建分发 | electron-builder 26 + GitHub Actions（三平台矩阵） |
+| 项目     | 内容                                                                                           |
+| -------- | ---------------------------------------------------------------------------------------------- |
+| 文档版本 | v1.0                                                                                           |
+| 编写日期 | 2026-10-29                                                                                     |
+| 关联文档 | [需求文档 PRD](./Prd.md)                                                                       |
+| 技术栈   | Electron 44 · TypeScript 5.9 · React 19 · Vite 8(electron-vite 6) · Tailwind CSS 4 · shadcn/ui |
+| 构建分发 | electron-builder 26 + GitHub Actions（三平台矩阵）                                             |
 
 ---
 
@@ -24,22 +24,22 @@
 
 ## 2. 技术选型
 
-| 层 | 选型 | 理由 | 备选与放弃原因 |
-| --- | --- | --- | --- |
-| 容器 | **Electron 44** | 需要内嵌任意第三方 Web 页面并能控制会话/权限；Electron 的 `WebContentsView` 与 `session` 控制粒度最细 | Tauri：系统 WebView 版本碎片化，且难以对第三方页面做会话隔离 |
-| 构建 | **electron-vite 6** | 一份配置同时产出 main / preload / renderer，HMR 覆盖三个进程 | 手写 Rollup/Vite 配置成本高 |
-| 语言 | **TypeScript 5.9**（strict） | IPC 契约、线路模型需要编译期约束 | — |
-| 持久化 | **electron-store 12** | Electron 生态事实标准；原子写、读取缓存、文件监听、损坏文件处理开箱即用；v12 要求 Electron ≥ 35（本项目 44） | 自研 JSON 存储：重复造轮子且要自己处理崩溃写坏；`conf` 直接用：缺少面向 Electron 的 `userData`/`name` 约定 |
-| UI 框架 | **React 19** | 生态最全，shadcn/ui 一等公民 | Vue：与 shadcn 生态不匹配 |
-| 样式 | **Tailwind CSS 4** | 原子类 + CSS 变量主题，配 shadcn/ui 无需额外设计系统 | 手写 CSS Modules：主题切换与暗色成本高 |
-| 组件 | **shadcn/ui**（源码内置） | 组件以源码形式落在仓库里，可改可审，无运行时依赖包袱；基于 Radix 保证可访问性 | Ant Design：样式体系与 Tailwind 冲突、定制成本高 |
-| 图标 | **lucide-react** | shadcn 默认图标集 | — |
-| 状态 | **Zustand 5** | 客户端状态轻量、无 Provider 嵌套；跨窗口场景足够 | Redux Toolkit：模板代码过重 |
-| 路由 | **React Router 7（Hash 模式）** | 打包后页面走 `file://`，Hash 路由无需主进程协议适配 | 自研视图切换：深链接与返回栈要自己实现 |
-| 校验 | **Zod 4** | IPC 入参、存储文件、导入 JSON 三处共用一套 schema | 手写校验易漏 |
-| 日志 | **electron-log 5** | 主/渲染进程统一落盘，支持按大小轮转 | console 在打包后不可见 |
-| 更新 | **electron-updater 6** | 与 electron-builder 天然配套，GitHub Releases 直连 | 自研更新器工作量大且平台差异多 |
-| 测试 | **Vitest**（node + jsdom 双环境） | 与 Vite 共用配置，启动快 | Jest：ESM 与 Vite 生态适配差 |
+| 层      | 选型                              | 理由                                                                                                         | 备选与放弃原因                                                                                             |
+| ------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| 容器    | **Electron 44**                   | 需要内嵌任意第三方 Web 页面并能控制会话/权限；Electron 的 `WebContentsView` 与 `session` 控制粒度最细        | Tauri：系统 WebView 版本碎片化，且难以对第三方页面做会话隔离                                               |
+| 构建    | **electron-vite 6**               | 一份配置同时产出 main / preload / renderer，HMR 覆盖三个进程                                                 | 手写 Rollup/Vite 配置成本高                                                                                |
+| 语言    | **TypeScript 5.9**（strict）      | IPC 契约、线路模型需要编译期约束                                                                             | —                                                                                                          |
+| 持久化  | **electron-store 12**             | Electron 生态事实标准；原子写、读取缓存、文件监听、损坏文件处理开箱即用；v12 要求 Electron ≥ 35（本项目 44） | 自研 JSON 存储：重复造轮子且要自己处理崩溃写坏；`conf` 直接用：缺少面向 Electron 的 `userData`/`name` 约定 |
+| UI 框架 | **React 19**                      | 生态最全，shadcn/ui 一等公民                                                                                 | Vue：与 shadcn 生态不匹配                                                                                  |
+| 样式    | **Tailwind CSS 4**                | 原子类 + CSS 变量主题，配 shadcn/ui 无需额外设计系统                                                         | 手写 CSS Modules：主题切换与暗色成本高                                                                     |
+| 组件    | **shadcn/ui**（源码内置）         | 组件以源码形式落在仓库里，可改可审，无运行时依赖包袱；基于 Radix 保证可访问性                                | Ant Design：样式体系与 Tailwind 冲突、定制成本高                                                           |
+| 图标    | **lucide-react**                  | shadcn 默认图标集                                                                                            | —                                                                                                          |
+| 状态    | **Zustand 5**                     | 客户端状态轻量、无 Provider 嵌套；跨窗口场景足够                                                             | Redux Toolkit：模板代码过重                                                                                |
+| 路由    | **React Router 7（Hash 模式）**   | 打包后页面走 `file://`，Hash 路由无需主进程协议适配                                                          | 自研视图切换：深链接与返回栈要自己实现                                                                     |
+| 校验    | **Zod 4**                         | IPC 入参、存储文件、导入 JSON 三处共用一套 schema                                                            | 手写校验易漏                                                                                               |
+| 日志    | **electron-log 5**                | 主/渲染进程统一落盘，支持按大小轮转                                                                          | console 在打包后不可见                                                                                     |
+| 更新    | **electron-updater 6**            | 与 electron-builder 天然配套，GitHub Releases 直连                                                           | 自研更新器工作量大且平台差异多                                                                             |
+| 测试    | **Vitest**（node + jsdom 双环境） | 与 Vite 共用配置，启动快                                                                                     | Jest：ESM 与 Vite 生态适配差                                                                               |
 
 > 版本以 `package.json` 为准，本表只表达选型意图。
 
@@ -83,11 +83,11 @@ flowchart TB
 
 ### 3.2 职责边界
 
-| 进程 | 负责 | 明确不负责 |
-| --- | --- | --- |
-| Main | 窗口生命周期、播放容器、网络探测、持久化、更新、外链、权限拦截 | 任何 UI 渲染 |
-| Preload | 把主进程能力收窄成 5 个命名空间的方法，零业务逻辑 | 状态持有、网络请求 |
-| Renderer | 页面渲染、交互状态、表单校验提示 | 直接发网络请求、读写文件 |
+| 进程     | 负责                                                           | 明确不负责               |
+| -------- | -------------------------------------------------------------- | ------------------------ |
+| Main     | 窗口生命周期、播放容器、网络探测、持久化、更新、外链、权限拦截 | 任何 UI 渲染             |
+| Preload  | 把主进程能力收窄成 5 个命名空间的方法，零业务逻辑              | 状态持有、网络请求       |
+| Renderer | 页面渲染、交互状态、表单校验提示                               | 直接发网络请求、读写文件 |
 
 **关键原则**：渲染进程不直接请求第三方接口。线路探测、解析页加载都在主进程完成，天然规避 CORS，也让第三方页面运行在独立 `partition` 中，不污染主 UI。
 
@@ -95,18 +95,18 @@ flowchart TB
 
 Electron 与 electron-vite 均支持 ESM，但有一条不可绕过的硬约束：**sandboxed preload 必须是 CJS**（Electron 的 ESM preload 要求 `sandbox: false`）。本项目坚持 `sandbox: true`，因此采用"主进程 ESM + preload CJS"的混合产物，而不是给 `package.json` 加 `"type": "module"`（那会把 preload 也切成 `.mjs`，进而被迫关闭沙箱）。
 
-| 目标 | 格式 | 产物 | 原因 |
-| --- | --- | --- | --- |
-| main | ESM | `out/main/index.mjs` | 使用纯 ESM 依赖（electron-store 12） |
-| preload | CJS | `out/preload/index.js` | sandbox 限制 |
-| renderer | ESM | Vite 产物 | 天然 ESM |
+| 目标     | 格式 | 产物                   | 原因                                 |
+| -------- | ---- | ---------------------- | ------------------------------------ |
+| main     | ESM  | `out/main/index.mjs`   | 使用纯 ESM 依赖（electron-store 12） |
+| preload  | CJS  | `out/preload/index.js` | sandbox 限制                         |
+| renderer | ESM  | Vite 产物              | 天然 ESM                             |
 
 ```ts
 // electron.vite.config.ts —— 只改 main，preload 保持默认 CJS
 export default defineConfig({
   main: { build: { rollupOptions: { output: { format: 'es' } } } },
   preload: {},
-  renderer: { /* ... */ }
+  renderer: {/* ... */}
 })
 ```
 
@@ -211,13 +211,13 @@ app.whenReady()
 
 ### 5.3 服务说明
 
-| 服务 | 关键实现 |
-| --- | --- |
-| `store.ts` | 每域一个 `electron-store` 实例（原子写、缓存由库负责）；读出后统一过 zod，失败则把原文件备份为 `<name>.corrupt-<ts>.json` 并以默认值重建；对外只暴露 `read()` / `write()` |
-| `line-service.ts` | 内置线路（只读模板）+ 用户覆盖层（enabled/order/name）+ 自定义线路合并；`builtin` 项不允许删除 |
-| `health-service.ts` | Node 内置 `fetch`（undici）发 `GET`，`AbortSignal.timeout(8s)`，并发 6；结果写回 store 并广播 `lines:health-changed` 事件 |
-| `player-service.ts` | 唯一持有 `WebContentsView`；状态机 `idle → loading → playing → failed`；负责超时计时、`did-fail-load`、自动切线路 |
-| `updater.ts` | 仅打包环境启用；dev 下直接返回"开发模式不支持更新" |
+| 服务                | 关键实现                                                                                                                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `store.ts`          | 每域一个 `electron-store` 实例（原子写、缓存由库负责）；读出后统一过 zod，失败则把原文件备份为 `<name>.corrupt-<ts>.json` 并以默认值重建；对外只暴露 `read()` / `write()`                                        |
+| `line-service.ts`   | 内置线路（只读模板）+ 用户覆盖层（enabled/order/name）+ 自定义线路合并；`builtin` 项不允许删除                                                                                                                   |
+| `health-service.ts` | 用未挂载的 `WebContentsView` 真实渲染解析页，轮询页面内是否出现 `video/iframe/canvas/object/embed` 判定可用；并发 3，单条超时取 `healthTimeoutMs`（默认 15s）；结果写回 store 并广播 `lines:health-changed` 事件 |
+| `player-service.ts` | 唯一持有 `WebContentsView`；状态机 `idle → loading → playing → failed`；负责超时计时、`did-fail-load`、自动切线路                                                                                                |
+| `updater.ts`        | 仅打包环境启用；dev 下直接返回"开发模式不支持更新"                                                                                                                                                               |
 
 ---
 
@@ -291,12 +291,12 @@ Pages (features/*)
 
 ### 7.2 状态划分
 
-| Store | 内容 | 持久化 |
-| --- | --- | --- |
-| `useSettingsStore` | 主题、超时、自动切换、代理、UA | 主进程（`settings:patch` 后回填） |
-| `useLinesStore` | 线路列表、当前选中线路、探测中状态 | 主进程为真相源，本地仅缓存 |
-| `usePlayerStore` | 播放状态机、当前 url、是否全屏、错误信息 | 不持久化 |
-| `useHistoryStore` | 历史、收藏 | 主进程 |
+| Store              | 内容                                     | 持久化                            |
+| ------------------ | ---------------------------------------- | --------------------------------- |
+| `useSettingsStore` | 主题、超时、自动切换、代理、UA           | 主进程（`settings:patch` 后回填） |
+| `useLinesStore`    | 线路列表、当前选中线路、探测中状态       | 主进程为真相源，本地仅缓存        |
+| `usePlayerStore`   | 播放状态机、当前 url、是否全屏、错误信息 | 不持久化                          |
+| `useHistoryStore`  | 历史、收藏                               | 主进程                            |
 
 渲染进程启动时执行一次 `hydrate()`：并发拉取 settings / lines / history，失败时展示"加载失败，重试"空态而非白屏。
 
@@ -367,7 +367,7 @@ const view = new WebContentsView({
     nodeIntegration: false,
     sandbox: true,
     javascript: true,
-    webSecurity: true,
+    webSecurity: true
   }
 })
 ```
@@ -425,13 +425,13 @@ const stores = {
 
 ### 9.3 存储文件
 
-| 文件 | 结构 | 上限 |
-| --- | --- | --- |
-| `settings.json` | `Settings` | — |
-| `lines.json` | `{ builtinOverrides: Record<id, {enabled, order, name}>, custom: ParseLine[], health: Record<id, LineHealth> }` | 500 条 |
-| `history.json` | `HistoryItem[]` | 100 条（FIFO） |
-| `favorites.json` | `FavoriteItem[]` | 无 |
-| `window-state.json` | 窗口尺寸/位置 | — |
+| 文件                | 结构                                                                                                            | 上限           |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- | -------------- |
+| `settings.json`     | `Settings`                                                                                                      | —              |
+| `lines.json`        | `{ builtinOverrides: Record<id, {enabled, order, name}>, custom: ParseLine[], health: Record<id, LineHealth> }` | 500 条         |
+| `history.json`      | `HistoryItem[]`                                                                                                 | 100 条（FIFO） |
+| `favorites.json`    | `FavoriteItem[]`                                                                                                | 无             |
+| `window-state.json` | 窗口尺寸/位置                                                                                                   | —              |
 
 存放路径：`app.getPath('userData')`（electron-store 默认 `cwd`，不要自定义 subdirectory）。设置页展示 `store.path` 并提供"打开目录"。
 
@@ -452,32 +452,32 @@ const stores = {
 
 ## 10. 安全设计
 
-| 面 | 措施 |
-| --- | --- |
-| 渲染进程 | `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`、禁用 `webviewTag` |
-| preload | 只 `exposeInMainWorld('api', ...)`，不暴露 `ipcRenderer` 本体；不传递函数以外的能力 |
-| IPC | 全量 zod 校验；拒绝未注册频道；错误不回传堆栈 |
-| 播放容器 | 独立 partition、禁 Node、权限全拒、导航锁定、新窗口拦截 |
+| 面       | 措施                                                                                                                                     |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 渲染进程 | `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`、禁用 `webviewTag`                                                   |
+| preload  | 只 `exposeInMainWorld('api', ...)`，不暴露 `ipcRenderer` 本体；不传递函数以外的能力                                                      |
+| IPC      | 全量 zod 校验；拒绝未注册频道；错误不回传堆栈                                                                                            |
+| 播放容器 | 独立 partition、禁 Node、权限全拒、导航锁定、新窗口拦截                                                                                  |
 | 内容安全 | 主 UI 注入 CSP：`default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'`；`connect-src` 不需要外网（网络都在主进程） |
-| 外链 | 一律 `shell.openExternal`，先校验协议为 `http/https`，防 `file://` / `javascript:` |
-| 依赖 | CI 跑 `pnpm audit --prod`，高危阻断合并 |
-| 更新 | 校验 electron-updater 自带的签名/哈希，不关闭校验 |
+| 外链     | 一律 `shell.openExternal`，先校验协议为 `http/https`，防 `file://` / `javascript:`                                                       |
+| 依赖     | CI 跑 `pnpm audit --prod`，高危阻断合并                                                                                                  |
+| 更新     | 校验 electron-updater 自带的签名/哈希，不关闭校验                                                                                        |
 
 ---
 
 ## 11. 已知坑与对策
 
-| 问题 | 现象 | 对策 |
-| --- | --- | --- |
-| WebContentsView 覆盖一切 DOM | 下拉框、Dialog、Tooltip 被播放页盖住 | 打开覆盖层前 `view.setVisible(false)`；或临时把 view bounds 缩到 0；关闭后恢复 |
-| 无边框窗口拖拽区吞事件 | 标题栏上的按钮点不动 | 交互元素强制 `-webkit-app-region: no-drag`；Input/Select 组件在 TitleBar 内需单独包裹 |
-| `setBounds` 抖动 | 拖动窗口时画面撕裂 | 渲染层用 rAF 合并 + 主进程做 16ms 节流，尺寸未变不重复下发 |
-| 第三方页面请求权限 | 弹摄像头/通知 | `setPermissionRequestHandler` 全拒，静默 |
-| 开发态热重载重复注册 IPC | 报 "Attempted to register a second handler" | 注册前 `ipcMain.removeHandler(channel)` |
-| ESM/CJS 混用 | 给 `package.json` 加 `"type": "module"` 后 preload 变 `.mjs`，sandbox 失效 | 只对 main 设 `output.format: 'es'`（见 §3.3） |
-| ESM 下 `__dirname` 不存在 | preload 路径拼错，打包后白屏 | 用 `import.meta.dirname`；打包产物必须冒烟测试 |
-| CJS 工具包具名导入 | `SyntaxError: Named export not found` | 改默认导入：`import updater from 'electron-updater'` |
-| macOS 全屏后 bounds 不更新 | 画面留黑边 | 监听 `enter-full-screen` / `leave-full-screen` 主动重算 |
+| 问题                         | 现象                                                                       | 对策                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| WebContentsView 覆盖一切 DOM | 下拉框、Dialog、Tooltip 被播放页盖住                                       | 打开覆盖层前 `view.setVisible(false)`；或临时把 view bounds 缩到 0；关闭后恢复        |
+| 无边框窗口拖拽区吞事件       | 标题栏上的按钮点不动                                                       | 交互元素强制 `-webkit-app-region: no-drag`；Input/Select 组件在 TitleBar 内需单独包裹 |
+| `setBounds` 抖动             | 拖动窗口时画面撕裂                                                         | 渲染层用 rAF 合并 + 主进程做 16ms 节流，尺寸未变不重复下发                            |
+| 第三方页面请求权限           | 弹摄像头/通知                                                              | `setPermissionRequestHandler` 全拒，静默                                              |
+| 开发态热重载重复注册 IPC     | 报 "Attempted to register a second handler"                                | 注册前 `ipcMain.removeHandler(channel)`                                               |
+| ESM/CJS 混用                 | 给 `package.json` 加 `"type": "module"` 后 preload 变 `.mjs`，sandbox 失效 | 只对 main 设 `output.format: 'es'`（见 §3.3）                                         |
+| ESM 下 `__dirname` 不存在    | preload 路径拼错，打包后白屏                                               | 用 `import.meta.dirname`；打包产物必须冒烟测试                                        |
+| CJS 工具包具名导入           | `SyntaxError: Named export not found`                                      | 改默认导入：`import updater from 'electron-updater'`                                  |
+| macOS 全屏后 bounds 不更新   | 画面留黑边                                                                 | 监听 `enter-full-screen` / `leave-full-screen` 主动重算                               |
 
 ---
 
@@ -504,9 +504,9 @@ pnpm test         # vitest
 
 ```yaml
 jobs:
-  verify:   # 所有 push/PR：lint + typecheck + test（ubuntu，快）
-  build:    # 矩阵 win/mac/linux，仅 main 分支与 tag
-  release:  # tag v* → electron-builder --publish always → GitHub Release
+  verify: # 所有 push/PR：lint + typecheck + test（ubuntu，快）
+  build: # 矩阵 win/mac/linux，仅 main 分支与 tag
+  release: # tag v* → electron-builder --publish always → GitHub Release
 ```
 
 - 缓存 `pnpm store`、`~/.cache/electron`、`~/.cache/electron-builder`；
@@ -517,12 +517,12 @@ jobs:
 
 ## 13. 测试策略
 
-| 层 | 工具 | 覆盖重点 |
-| --- | --- | --- |
-| 纯函数 | Vitest (node) | 线路拼接（prefix/template、编码、异常输入）、URL 校验、平台识别、存储迁移 |
-| 主进程服务 | Vitest (node) + 临时目录 | zod 校验失败后的备份重建、版本迁移、内置/用户合并、并发限流 |
-| 组件 | Vitest + jsdom + Testing Library | 线路表单校验、设置项联动 |
-| 端到端（后续） | Playwright（`_electron`） | 启动 → 输入地址 → 播放 → 切线路 |
+| 层             | 工具                             | 覆盖重点                                                                  |
+| -------------- | -------------------------------- | ------------------------------------------------------------------------- |
+| 纯函数         | Vitest (node)                    | 线路拼接（prefix/template、编码、异常输入）、URL 校验、平台识别、存储迁移 |
+| 主进程服务     | Vitest (node) + 临时目录         | zod 校验失败后的备份重建、版本迁移、内置/用户合并、并发限流               |
+| 组件           | Vitest + jsdom + Testing Library | 线路表单校验、设置项联动                                                  |
+| 端到端（后续） | Playwright（`_electron`）        | 启动 → 输入地址 → 播放 → 切线路                                           |
 
 主进程服务测试通过 `vi.mock('electron')` 注入 `app.getPath`，避免真起 Electron。
 
@@ -539,13 +539,13 @@ jobs:
 
 ## 15. 关键决策记录（ADR）
 
-| 编号 | 决策 | 理由 | 影响 |
-| --- | --- | --- | --- |
-| ADR-1 | 播放容器用 `WebContentsView`，不用 iframe/webview | iframe 被 X-Frame-Options 拦截；webview 官方弱化 | 需要处理 bounds 同步与 DOM 遮挡 |
-| ADR-2 | 持久化用 electron-store 12，主进程切 ESM | 生态事实标准，原子写/缓存/损坏处理开箱即用；v12 纯 ESM，配合"main ESM + preload CJS"同时满足沙箱要求 | 主进程产物改 `.mjs`；electron-updater 需默认导入；校验仍由 zod 统一负责 |
-| ADR-3 | 业务状态放在主进程，渲染进程不落盘 | 单一真相源，避免双写不一致；未来支持多窗口更简单 | 每次读写都走 IPC，需要缓存与乐观更新 |
-| ADR-4 | shadcn/ui 以源码形式内置 | 组件可改、无版本锁定、与 Tailwind 4 一致 | 升级需手动同步上游变更 |
-| ADR-5 | 路由用 Hash 模式 | 打包后 `file://` 协议下 History 路由会 404 | URL 形如 `#/settings` |
+| 编号  | 决策                                              | 理由                                                                                                 | 影响                                                                    |
+| ----- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| ADR-1 | 播放容器用 `WebContentsView`，不用 iframe/webview | iframe 被 X-Frame-Options 拦截；webview 官方弱化                                                     | 需要处理 bounds 同步与 DOM 遮挡                                         |
+| ADR-2 | 持久化用 electron-store 12，主进程切 ESM          | 生态事实标准，原子写/缓存/损坏处理开箱即用；v12 纯 ESM，配合"main ESM + preload CJS"同时满足沙箱要求 | 主进程产物改 `.mjs`；electron-updater 需默认导入；校验仍由 zod 统一负责 |
+| ADR-3 | 业务状态放在主进程，渲染进程不落盘                | 单一真相源，避免双写不一致；未来支持多窗口更简单                                                     | 每次读写都走 IPC，需要缓存与乐观更新                                    |
+| ADR-4 | shadcn/ui 以源码形式内置                          | 组件可改、无版本锁定、与 Tailwind 4 一致                                                             | 升级需手动同步上游变更                                                  |
+| ADR-5 | 路由用 Hash 模式                                  | 打包后 `file://` 协议下 History 路由会 404                                                           | URL 形如 `#/settings`                                                   |
 
 ---
 
