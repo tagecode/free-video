@@ -50,9 +50,16 @@ export function HomePage(): React.JSX.Element {
       return
     }
     await patchSettings({ lastLineId: currentLineId })
-    const failure = await open(videoUrl, currentLineId)
+    const { failure, lineId: actualLineId } = await open(videoUrl, currentLineId)
     if (failure) {
       setError(failure)
+      return
+    }
+    // 自动降级会落到别的线路上，下拉框和"上次使用"都得跟着改，
+    // 否则界面上显示的和实际在播的不是同一条。
+    if (actualLineId && actualLineId !== currentLineId) {
+      setLineId(actualLineId)
+      await patchSettings({ lastLineId: actualLineId })
     }
   }
 
@@ -63,9 +70,14 @@ export function HomePage(): React.JSX.Element {
     }
     setError(null)
     void patchSettings({ lastLineId: nextLineId })
-    void open(status.videoUrl, nextLineId).then((failure) => {
+    void open(status.videoUrl, nextLineId).then(({ failure, lineId: actualLineId }) => {
       if (failure) {
         setError(failure)
+        return
+      }
+      if (actualLineId && actualLineId !== nextLineId) {
+        setLineId(actualLineId)
+        void patchSettings({ lastLineId: actualLineId })
       }
     })
   }

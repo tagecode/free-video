@@ -7,10 +7,12 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import { usePlayerStore } from '@/store/player'
+import { useSettingsStore } from '@/store/settings'
 
 export function HistoryPage(): React.JSX.Element {
   const [items, setItems] = useState<HistoryItem[]>([])
   const open = usePlayerStore((state) => state.open)
+  const patchSettings = useSettingsStore((state) => state.patch)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -28,7 +30,11 @@ export function HistoryPage(): React.JSX.Element {
       navigate('/')
       return
     }
-    await open(item.videoUrl, item.lineId)
+    const { lineId } = await open(item.videoUrl, item.lineId)
+    // 首页下拉框按 lastLineId 回显，降级后要记成真正播放的那条
+    if (lineId) {
+      void patchSettings({ lastLineId: lineId })
+    }
     navigate('/')
   }
 

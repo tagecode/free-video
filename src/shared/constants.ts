@@ -2,9 +2,11 @@ import { settingsSchema } from './schemas'
 
 export const APP_NAME = 'Free Video'
 export const PLAYER_PARTITION = 'persist:player'
+export const HEALTH_PARTITION = 'persist:health'
 
 export const MAX_HISTORY = 100
-export const HEALTH_CONCURRENCY = 6
+// 健康检查要真实渲染整页，并发太高会拖慢所有线路的判定
+export const HEALTH_CONCURRENCY = 3
 export const LINE_FAIL_THRESHOLD = 2
 export const LINE_FAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000
 // 解析页普遍靠 JS 二次渲染，did-finish-load 后需留时间再判断是否为空白页

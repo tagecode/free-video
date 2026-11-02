@@ -127,15 +127,15 @@ export function SettingsPage(): React.JSX.Element {
 
       <section className="rounded-xl border px-4 py-2">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">线路检测</h2>
-        <Row title="检测超时" description="单条线路探测的最长毫秒数（3000-20000）">
+        <Row title="检测超时" description="单条线路探测的最长毫秒数（3000-30000）">
           <Input
             type="number"
             min={3000}
-            max={20000}
+            max={30000}
             step={1000}
             className="w-28"
             value={settings.healthTimeoutMs}
-            onChange={(event) => set('healthTimeoutMs', Number(event.target.value) || 8000)}
+            onChange={(event) => set('healthTimeoutMs', Number(event.target.value) || 15000)}
           />
         </Row>
       </section>

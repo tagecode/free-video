@@ -47,7 +47,8 @@ export const settingsSchema = z.object({
   // 播放中在下拉框换线路是否立即重新解析；默认关闭，避免误触打断正在看的视频
   switchLineOnSelect: z.boolean().default(false),
   playTimeoutMs: z.number().int().min(5000).max(60000).default(15000),
-  healthTimeoutMs: z.number().int().min(3000).max(20000).default(8000),
+  // 健康检查要等整页渲染出播放器元素，比拉一次 HTML 慢，慢的线路能到 11 秒
+  healthTimeoutMs: z.number().int().min(3000).max(30000).default(15000),
   healthCheckIntervalMs: z.number().int().min(0).default(0),
   userAgent: z.string().default(''),
   proxyMode: z.enum(['system', 'none', 'manual']).default('system'),
