@@ -1,9 +1,31 @@
 import { join } from 'node:path'
-import { BrowserWindow, shell } from 'electron'
+import { BrowserWindow, nativeTheme, shell } from 'electron'
 import { APP_NAME } from '@shared/constants'
 import { is } from '@electron-toolkit/utils'
 import { getWindowState, saveWindowState } from './services/window-state'
 import { registerShortcuts } from './shortcuts'
+
+// 三个平台共用一条 44px 的标题栏：macOS 的红绿灯浮在上面，
+// Windows/Linux 用系统的窗口控件覆盖层，界面主体因此完全一致。
+const TITLE_BAR_HEIGHT = 44
+const isMac = process.platform === 'darwin'
+
+function titleBarOverlay(): Electron.TitleBarOverlay {
+  return {
+    color: nativeTheme.shouldUseDarkColors ? '#171a22' : '#f7f8fa',
+    symbolColor: nativeTheme.shouldUseDarkColors ? '#9aa4b2' : '#4b5563',
+    height: TITLE_BAR_HEIGHT
+  }
+}
+
+function syncTitleBarOverlay(window: BrowserWindow): void {
+  if (isMac) return
+  try {
+    window.setTitleBarOverlay(titleBarOverlay())
+  } catch {
+    /* 窗口已销毁或平台不支持覆盖层时保持系统默认控件 */
+  }
+}
 
 export function createMainWindow(): BrowserWindow {
   const state = getWindowState()
@@ -17,8 +39,12 @@ export function createMainWindow(): BrowserWindow {
     minHeight: 680,
     show: false,
     title: APP_NAME,
-    backgroundColor: '#0b0b0f',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#171a22' : '#f7f8fa',
     autoHideMenuBar: true,
+    titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
+    ...(isMac
+      ? { trafficLightPosition: { x: 18, y: 15 } }
+      : { titleBarOverlay: titleBarOverlay() }),
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.js'),
       sandbox: true,
@@ -35,7 +61,15 @@ export function createMainWindow(): BrowserWindow {
 
   registerShortcuts(window, window.webContents)
 
+  // 主题切换后系统控件要跟着换色，否则浅色界面顶着一排深色按钮
+  const onThemeUpdated = (): void => {
+    if (!window.isDestroyed()) syncTitleBarOverlay(window)
+  }
+  nativeTheme.on('updated', onThemeUpdated)
+
   window.on('close', () => saveWindowState(window))
+
+  window.on('closed', () => nativeTheme.off('updated', onThemeUpdated))
 
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) {

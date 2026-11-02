@@ -2,6 +2,7 @@ import type { LineStatus, ParseLine, ParseLineInput } from '@shared/types'
 import { cn } from '@/lib/utils'
 import { Loader2, Pencil, Plus, RotateCcw, Trash2, Upload, Download, Activity } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -117,60 +118,57 @@ export function LinesPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">线路管理</h1>
-          <p className="text-xs text-muted-foreground">
-            共 {lines.length} 条，启用 {lines.filter((line) => line.enabled).length}{' '}
-            条。内置线路可禁用但不可删除。
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled={checking} onClick={() => void check()}>
-            {checking ? <Loader2 className="animate-spin" /> : <Activity />}
-            检测全部
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-            <Upload />
-            导入
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => void exportJson()}>
-            <Download />
-            导出
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => void resetBuiltin()}>
-            <RotateCcw />
-            重置内置
-          </Button>
-          <Button size="sm" onClick={openCreate}>
-            <Plus />
-            新增线路
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        title="线路管理"
+        description={`共 ${lines.length} 条，启用 ${lines.filter((line) => line.enabled).length} 条。内置线路可禁用但不可删除。`}
+        actions={
+          <>
+            <Button variant="outline" size="sm" disabled={checking} onClick={() => void check()}>
+              {checking ? <Loader2 className="animate-spin" /> : <Activity />}
+              检测全部
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <Upload />
+              导入
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => void exportJson()}>
+              <Download />
+              导出
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => void resetBuiltin()}>
+              <RotateCcw />
+              重置内置
+            </Button>
+            <Button size="sm" onClick={openCreate}>
+              <Plus />
+              新增线路
+            </Button>
+          </>
+        }
+      />
 
       {notice && (
-        <div className="rounded-md border border-border bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+        <div className="rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
           {notice}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto rounded-xl border">
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/70 bg-card/50 backdrop-blur">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-card/95 text-left text-xs text-muted-foreground backdrop-blur">
+          <thead className="sticky top-0 bg-card/95 text-left text-[11px] text-muted-foreground backdrop-blur">
             <tr>
-              <th className="px-4 py-2 font-medium">名称</th>
-              <th className="px-4 py-2 font-medium">地址</th>
-              <th className="px-4 py-2 font-medium">状态</th>
-              <th className="px-4 py-2 font-medium">延迟</th>
-              <th className="px-4 py-2 font-medium">启用</th>
-              <th className="px-4 py-2 text-right font-medium">操作</th>
+              <th className="px-4 py-2.5 font-medium">名称</th>
+              <th className="px-4 py-2.5 font-medium">地址</th>
+              <th className="px-4 py-2.5 font-medium">状态</th>
+              <th className="px-4 py-2.5 font-medium">延迟</th>
+              <th className="px-4 py-2.5 font-medium">启用</th>
+              <th className="px-4 py-2.5 text-right font-medium">操作</th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line) => (
-              <tr key={line.id} className="border-t hover:bg-accent/40">
-                <td className="px-4 py-2">
+              <tr key={line.id} className="border-t border-border/60 hover:bg-accent/40">
+                <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
                     <span>{line.name}</span>
                     {line.builtin && (
@@ -180,25 +178,25 @@ export function LinesPage(): React.JSX.Element {
                     )}
                   </div>
                 </td>
-                <td className="max-w-[360px] truncate px-4 py-2 text-xs text-muted-foreground">
+                <td className="max-w-[360px] truncate px-4 py-2.5 text-xs text-muted-foreground">
                   {line.endpoint}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2.5">
                   <span className="flex items-center gap-1.5 text-xs">
                     <span className={cn('size-2 rounded-full', STATUS_CLASS[line.status])} />
                     {STATUS_TEXT[line.status]}
                   </span>
                 </td>
-                <td className="px-4 py-2 text-xs text-muted-foreground">
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">
                   {line.latencyMs ? `${line.latencyMs} ms` : '—'}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2.5">
                   <Switch
                     checked={line.enabled}
                     onCheckedChange={(value) => void toggle(line.id, value)}
                   />
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2.5">
                   <div className="flex justify-end gap-1">
                     <Button size="icon" variant="ghost" onClick={() => void check([line.id])}>
                       <Activity />

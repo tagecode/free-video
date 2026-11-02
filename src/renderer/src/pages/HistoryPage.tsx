@@ -1,9 +1,10 @@
 import { platformLabel } from '@shared/platform'
 import type { HistoryItem } from '@shared/types'
 import { formatTime } from '@/lib/utils'
-import { Play, Trash2 } from 'lucide-react'
+import { Clock, Play, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import { usePlayerStore } from '@/store/player'
@@ -40,33 +41,39 @@ export function HistoryPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">播放历史</h1>
-          <p className="text-xs text-muted-foreground">最多保留最近 100 条记录</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={items.length === 0}
-          onClick={async () => {
-            setItems(await api.history.clear())
-          }}
-        >
-          <Trash2 />
-          清空
-        </Button>
-      </header>
+      <PageHeader
+        title="播放历史"
+        description="最多保留最近 100 条记录"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={items.length === 0}
+            onClick={async () => {
+              setItems(await api.history.clear())
+            }}
+          >
+            <Trash2 />
+            清空
+          </Button>
+        }
+      />
 
-      <div className="flex-1 overflow-y-auto rounded-xl border">
+      <div className="flex-1 overflow-y-auto rounded-2xl border border-border/70 bg-card/50 backdrop-blur">
         {items.length === 0 ? (
-          <p className="p-8 text-center text-sm text-muted-foreground">暂无播放记录</p>
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+            <span className="grid size-12 place-items-center rounded-2xl border border-border/60 bg-background/50">
+              <Clock className="size-5 text-muted-foreground/70" />
+            </span>
+            <p className="text-sm text-muted-foreground">暂无播放记录</p>
+            <p className="text-xs text-muted-foreground/70">播放过的视频会出现在这里</p>
+          </div>
         ) : (
           <ul>
             {items.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-accent/40"
+                className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{item.videoUrl}</p>

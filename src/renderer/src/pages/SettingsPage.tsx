@@ -1,6 +1,7 @@
 import { APP_NAME, DISCLAIMER_TEXT } from '@shared/constants'
 import type { AppInfo, Settings, UpdateStatus } from '@shared/types'
 import { useEffect, useState } from 'react'
+import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -67,12 +68,9 @@ export function SettingsPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-6">
-      <header>
-        <h1 className="text-lg font-semibold">设置</h1>
-        <p className="text-xs text-muted-foreground">修改后立即生效并持久化到本地</p>
-      </header>
+      <PageHeader title="设置" description="修改后立即生效并持久化到本地" />
 
-      <section className="rounded-xl border px-4 py-2">
+      <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">外观</h2>
         <Row title="主题" description="跟随系统或手动指定明暗">
           <Select
@@ -91,7 +89,7 @@ export function SettingsPage(): React.JSX.Element {
         </Row>
       </section>
 
-      <section className="rounded-xl border px-4 py-2">
+      <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">播放</h2>
         <Row title="自动降级" description="当前线路失败时自动尝试下一条">
           <Switch
@@ -134,7 +132,7 @@ export function SettingsPage(): React.JSX.Element {
         </Row>
       </section>
 
-      <section className="rounded-xl border px-4 py-2">
+      <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">线路检测</h2>
         <Row title="检测超时" description="单条线路探测的最长毫秒数（3000-30000）">
           <Input
@@ -149,7 +147,7 @@ export function SettingsPage(): React.JSX.Element {
         </Row>
       </section>
 
-      <section className="rounded-xl border px-4 py-2">
+      <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">网络</h2>
         <Row title="代理模式" description="作用于主界面与播放器会话">
           <Select
@@ -180,7 +178,7 @@ export function SettingsPage(): React.JSX.Element {
         )}
       </section>
 
-      <section className="rounded-xl border px-4 py-2">
+      <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">关于</h2>
         <Row title={`${APP_NAME} ${info?.version ?? ''}`} description={info?.platform}>
           <div className="flex items-center gap-2">

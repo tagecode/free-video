@@ -11,6 +11,7 @@ function subscribe<T>(channel: string, callback: (payload: T) => void): () => vo
 
 const api: AppApi = {
   app: {
+    platform: process.platform,
     info: () => ipcRenderer.invoke('app:info')
   },
   settings: {

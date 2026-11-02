@@ -61,7 +61,7 @@ export function PlayerSurface(): React.JSX.Element {
   }, [isActive, syncBounds])
 
   return (
-    <div className="relative flex-1 overflow-hidden rounded-xl border bg-black">
+    <div className="relative flex-1 overflow-hidden rounded-2xl border border-border/60 bg-black shadow-[0_24px_70px_-40px_rgba(0,0,0,0.9)]">
       <div
         ref={containerRef}
         className="absolute inset-0"
@@ -69,21 +69,28 @@ export function PlayerSurface(): React.JSX.Element {
       />
 
       {!playing && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-          <MonitorPlay className="size-12 opacity-40" />
-          <p className="text-sm">
-            {status.state === 'failed'
-              ? (status.error ?? '播放失败')
-              : '输入视频地址后选择线路开始播放'}
-          </p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+          <span className="grid size-16 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
+            <MonitorPlay className="size-7 text-white/35" />
+          </span>
+          <div className="max-w-[70%] text-center">
+            <p className="text-sm text-white/70">
+              {status.state === 'failed' ? '播放失败' : '尚未开始播放'}
+            </p>
+            <p className="mt-1 text-xs text-white/35">
+              {status.state === 'failed'
+                ? (status.error ?? '换一条线路再试试')
+                : '粘贴视频地址后点击开始播放 · F11 全屏'}
+            </p>
+          </div>
         </div>
       )}
 
       {status.state === 'loading' && (
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-foreground">
-          <Loader2 className="size-8 animate-spin" />
-          <p className="text-sm">正在尝试线路（第 {status.attempt ?? 1} 次）</p>
-          <p className="max-w-[80%] truncate text-xs text-muted-foreground">{status.playUrl}</p>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 backdrop-blur-sm">
+          <Loader2 className="size-8 animate-spin text-white/70" />
+          <p className="text-sm text-white/80">正在尝试线路（第 {status.attempt ?? 1} 次）</p>
+          <p className="max-w-[80%] truncate text-xs text-white/35">{status.playUrl}</p>
         </div>
       )}
     </div>

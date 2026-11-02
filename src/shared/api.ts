@@ -18,6 +18,8 @@ import type {
 
 export interface AppApi {
   app: {
+    // 同步可读，界面布局（标题栏留白）按平台模板决定，不能等异步 info
+    platform: 'darwin' | 'win32' | 'linux' | string
     info: () => Promise<AppInfo>
   }
   settings: {
