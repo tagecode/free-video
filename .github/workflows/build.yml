@@ -19,7 +19,7 @@ jobs:
         include:
           - { os: ubuntu-latest, flag: --linux }
           - { os: windows-latest, flag: --win }
-          - { os: macos-latest, flag: --mac }   # 按 mac.target 声明的 arch 产出 x64 + arm64 各一套
+          - { os: macos-latest, flag: --mac } # 按 mac.target 声明的 arch 产出 x64 + arm64 各一套
     runs-on: ${{ matrix.os }}
     env:
       # 未配置证书时跳过 macOS 代码签名，避免 CI 卡在钥匙串查找
@@ -57,6 +57,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm lint
+
+      # 格式检查与平台无关，只跑一次
+      - name: 检查代码格式
+        if: runner.os == 'Linux'
+        run: pnpm exec prettier --check .
 
       # pnpm build = typecheck + electron-vite build（main / preload / renderer）
       - run: pnpm build

@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           - { os: windows-latest, flag: --win }
-          - { os: macos-latest, flag: --mac }   # 按 mac.target 声明的 arch 产出 x64 + arm64 各一套
+          - { os: macos-latest, flag: --mac } # 按 mac.target 声明的 arch 产出 x64 + arm64 各一套
           - { os: ubuntu-latest, flag: --linux }
     runs-on: ${{ matrix.os }}
     env:

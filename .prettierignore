@@ -1,6 +1,15 @@
 out
 dist
+node_modules
 pnpm-lock.yaml
 LICENSE.md
 tsconfig.json
 tsconfig.*.json
+
+# 内置线路：一条线路一行，便于人工比对
+resources/lines.default.json
+
+# 本地工具状态
+.codegraph
+.spec-workflow
+.cursor
