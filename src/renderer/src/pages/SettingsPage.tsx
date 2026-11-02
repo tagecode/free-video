@@ -1,7 +1,15 @@
-import { APP_NAME } from '@shared/constants'
+import { APP_NAME, DISCLAIMER_TEXT } from '@shared/constants'
 import type { AppInfo, Settings, UpdateStatus } from '@shared/types'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -41,6 +49,7 @@ export function SettingsPage(): React.JSX.Element {
   const patch = useSettingsStore((state) => state.patch)
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [update, setUpdate] = useState<UpdateStatus | null>(null)
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false)
 
   useEffect(() => {
     void api.app.info().then(setInfo)
@@ -200,12 +209,37 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         </Row>
         <Separator />
+        <Row title="免责声明" description="首次启动确认过的使用条款与内容边界">
+          <Button size="sm" variant="outline" onClick={() => setDisclaimerOpen(true)}>
+            查看
+          </Button>
+        </Row>
+        <Separator />
         <Row title="数据目录" description={info?.userDataPath}>
           <Label className="text-xs text-muted-foreground">
             settings / lines / history / favorites
           </Label>
         </Row>
       </section>
+
+      <Dialog open={disclaimerOpen} onOpenChange={setDisclaimerOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>使用前请阅读</DialogTitle>
+            <DialogDescription>
+              Free Video 是一个纯播放容器，请自行判断内容来源的合法性。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-md border bg-muted/50 p-4 text-xs leading-relaxed whitespace-pre-line text-muted-foreground">
+            {DISCLAIMER_TEXT}
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setDisclaimerOpen(false)}>知道了</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <p className="pb-4 text-[11px] leading-relaxed text-muted-foreground">
         本软件仅作为第三方网页的播放容器，不存储、不转码、不分发任何视频内容。请遵守所在地区法律法规，支持正版内容。
