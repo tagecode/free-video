@@ -6,7 +6,8 @@ export function buildParseUrl(
 ): string {
   const encoded = encodeURIComponent(videoUrl.trim())
   if (line.joinMode === 'template') {
-    return line.endpoint.replace('{url}', encoded)
+    // 用函数形式替换：字符串替换会把地址里的 `$&` 之类的序列当成替换模式
+    return line.endpoint.replace('{url}', () => encoded)
   }
   return `${line.endpoint}${encoded}`
 }

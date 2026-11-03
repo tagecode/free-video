@@ -105,6 +105,7 @@ Free Video 把网页版的「视频解析」做成一个可安装、可自维护
 pnpm install      # 安装依赖
 pnpm dev          # 启动开发环境（主进程热重载 + 渲染进程 HMR）
 pnpm lint         # ESLint 检查
+pnpm test         # Vitest 单元测试
 pnpm typecheck    # TypeScript 类型检查（node + web 两套配置）
 pnpm build        # 类型检查 + 构建到 out/
 pnpm build:unpack # 只打包成目录，不做安装包，便于快速验证
@@ -159,6 +160,7 @@ docs/              # 产品需求、技术架构文档
 | 界面        | React 19、TypeScript 5.9（strict）、Tailwind CSS 4、Radix UI（shadcn 风格源码内联组件） |
 | 状态与路由  | Zustand 5、React Router 7（HashRouter）                                                 |
 | 存储        | electron-store 12，zod 4 统一校验                                                       |
+| 测试        | Vitest 5（node 环境，覆盖 URL 拼接、平台识别、schema 校验与并发调度）                   |
 | 日志 / 更新 | electron-log 5、electron-updater 6                                                      |
 
 ## 文档
@@ -180,7 +182,7 @@ docs/              # 产品需求、技术架构文档
 
 欢迎提交 Issue 与 Pull Request，完整流程见 [贡献指南](CONTRIBUTING.md)。
 
-- 提交前请确保 `pnpm lint` 与 `pnpm typecheck` 通过（CI 会校验三平台构建）；
+- 提交前请确保 `pnpm lint`、`pnpm test` 与 `pnpm typecheck` 通过（CI 会校验三平台构建）；
 - 提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/)，如 `feat: 支持线路分组`、`fix: 修复全屏后 bounds 未同步`；
 - **新增或更新内置线路**是最有价值的贡献之一，请附上实际测试结果（可用性、响应耗时、实测平台）；
 - 安全问题请勿公开提交，按 [安全策略](SECURITY.md) 私密报告。

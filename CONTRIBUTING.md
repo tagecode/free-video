@@ -29,6 +29,7 @@ pnpm dev
 
 ```bash
 pnpm lint         # ESLint
+pnpm test         # Vitest 单元测试
 pnpm typecheck    # 类型检查（node 与 web 两套 tsconfig）
 pnpm format       # Prettier 格式化
 pnpm build        # 类型检查 + 构建到 out/
@@ -40,7 +41,7 @@ pnpm build        # 类型检查 + 构建到 out/
 - **主进程与渲染进程只通过 `src/shared/ipc.ts` 的契约通信**。新增 IPC 需要同时更新：handler（`src/main/ipc/handlers/`）、preload 白名单（`src/preload/index.ts`）、类型声明（`src/shared/api.ts`）。
 - 样式统一走 Tailwind 工具类与 `src/renderer/src/components/ui/` 下的既有组件，不引入新的样式方案。
 - 代码注释只写「为什么」，不复述代码在做什么。
-- 提交前请确保 `pnpm lint` 与 `pnpm typecheck` 通过——CI 会在三个平台上跑这两项并完整打包。
+- 提交前请确保 `pnpm lint`、`pnpm test` 与 `pnpm typecheck` 通过——CI 会在三个平台上跑这几项并完整打包。
 
 ## 提交规范
 
