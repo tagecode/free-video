@@ -106,10 +106,12 @@ jobs:
         run: |
           set -euo pipefail
           tag="$GITHUB_REF_NAME"
+          repo="$GITHUB_REPOSITORY"
           ls -lh dist
-          if gh release view "$tag" >/dev/null 2>&1; then
+          # 这个 job 没有 checkout，gh 无法从工作目录推断仓库，必须显式指定
+          if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
             echo "Release $tag 已存在，覆盖其中的同名附件"
-            gh release upload "$tag" dist/* --clobber
+            gh release upload "$tag" dist/* --clobber --repo "$repo"
           else
-            gh release create "$tag" dist/* --title "$tag" --generate-notes
+            gh release create "$tag" dist/* --title "$tag" --generate-notes --repo "$repo"
           fi
