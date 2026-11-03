@@ -11,6 +11,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # typescript-eslint 8 加载时会拒绝 TS 7，lint 直接崩溃（typescript-eslint#10940）
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # eslint-plugin-react 7 仍在调用 ESLint 10 已移除的 context.getFilename()
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
     groups:
       electron:
         patterns:
