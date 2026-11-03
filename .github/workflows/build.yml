@@ -58,6 +58,8 @@ jobs:
 
       - run: pnpm lint
 
+      - run: pnpm test
+
       # 格式检查与平台无关，只跑一次
       - name: 检查代码格式
         if: runner.os == 'Linux'
