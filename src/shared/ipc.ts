@@ -46,6 +46,7 @@ export interface IpcContract {
 
   'favorites:list': () => FavoriteItem[]
   'favorites:add': (input: FavoriteInput) => FavoriteItem[]
+  'favorites:fill-titles': () => FavoriteItem[]
   'favorites:remove': (id: string) => FavoriteItem[]
 
   'updater:check': () => UpdateStatus

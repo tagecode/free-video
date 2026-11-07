@@ -57,6 +57,7 @@ export interface AppApi {
   favorites: {
     list: () => Promise<FavoriteItem[]>
     add: (input: FavoriteInput) => Promise<FavoriteItem[]>
+    fillTitles: () => Promise<FavoriteItem[]>
     remove: (id: string) => Promise<FavoriteItem[]>
   }
   updater: {

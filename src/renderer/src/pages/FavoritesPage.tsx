@@ -2,23 +2,51 @@ import { isHttpUrl } from '@shared/join-url'
 import { detectPlatform, platformLabel } from '@shared/platform'
 import type { FavoriteItem } from '@shared/types'
 import { formatTime } from '@/lib/utils'
-import { Heart, Plus, Trash2 } from 'lucide-react'
+import { Check, Copy, Heart, Loader2, Play, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
+import { returnToPlayer } from '@/lib/return-to-player'
 import { errorMessage } from '@/lib/utils'
+import { useLinesStore } from '@/store/lines'
+import { usePlayerStore } from '@/store/player'
+import { useSettingsStore } from '@/store/settings'
 
 export function FavoritesPage(): React.JSX.Element {
   const [items, setItems] = useState<FavoriteItem[]>([])
   const [value, setValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [openingId, setOpeningId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const lines = useLinesStore((state) => state.lines)
+  const settings = useSettingsStore((state) => state.settings)
+  const patchSettings = useSettingsStore((state) => state.patch)
+  const open = usePlayerStore((state) => state.open)
+
+  useEffect(() => {
+    if (!copiedId) return
+    const timer = window.setTimeout(() => setCopiedId(null), 1500)
+    return () => window.clearTimeout(timer)
+  }, [copiedId])
 
   useEffect(() => {
     let active = true
     void api.favorites.list().then((list) => {
-      if (active) setItems(list)
+      if (!active) return
+      setItems(list)
+      if (list.some((item) => !item.title.trim())) {
+        void api.favorites
+          .fillTitles()
+          .then((filled) => {
+            if (active) setItems(filled)
+          })
+          .catch(() => undefined)
+      }
     })
     return () => {
       active = false
@@ -26,10 +54,12 @@ export function FavoritesPage(): React.JSX.Element {
   }, [])
 
   const add = async (): Promise<void> => {
+    if (saving) return
     if (!isHttpUrl(value)) {
       setError('请输入 http/https 开头的视频页面地址')
       return
     }
+    setSaving(true)
     try {
       setItems(
         await api.favorites.add({
@@ -42,12 +72,53 @@ export function FavoritesPage(): React.JSX.Element {
       setError(null)
     } catch (caught) {
       setError(errorMessage(caught))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const copyLink = async (item: FavoriteItem): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(item.videoUrl)
+    } catch {
+      const area = document.createElement('textarea')
+      area.value = item.videoUrl
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.left = '-9999px'
+      document.body.append(area)
+      area.select()
+      const copied = document.execCommand('copy')
+      area.remove()
+      if (!copied) {
+        setError('复制失败，请手动选择链接')
+        return
+      }
+    }
+    setCopiedId(item.id)
+    setError(null)
+  }
+
+  const play = async (item: FavoriteItem): Promise<void> => {
+    if (openingId) return
+    setOpeningId(item.id)
+    try {
+      await returnToPlayer({
+        videoUrl: item.videoUrl,
+        lines,
+        lastLineId: settings.lastLineId,
+        open,
+        patchSettings,
+        navigate
+      })
+    } finally {
+      setOpeningId(null)
     }
   }
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
-      <PageHeader title="我的收藏" description="保存常看的视频页面地址，随时回看" />
+      <PageHeader title="我的收藏" description="保存常看的视频，并记下作品名方便以后找回" />
 
       <div className="flex gap-2 rounded-2xl border border-border/70 bg-card/60 p-2 backdrop-blur">
         <Input
@@ -58,9 +129,9 @@ export function FavoritesPage(): React.JSX.Element {
             if (event.key === 'Enter') void add()
           }}
         />
-        <Button onClick={() => void add()}>
-          <Plus />
-          收藏
+        <Button disabled={saving} onClick={() => void add()}>
+          {saving ? <Loader2 className="animate-spin" /> : <Plus />}
+          {saving ? '读取标题' : '收藏'}
         </Button>
       </div>
 
@@ -77,26 +148,63 @@ export function FavoritesPage(): React.JSX.Element {
           </div>
         ) : (
           <ul>
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{item.videoUrl}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {platformLabel(item.videoUrl)} · {formatTime(item.createdAt)}
-                  </p>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={async () => setItems(await api.favorites.remove(item.id))}
+            {items.map((item) => {
+              const title = item.title.trim()
+              return (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
                 >
-                  <Trash2 />
-                </Button>
-              </li>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={
+                        title ? 'truncate text-sm font-medium' : 'truncate text-sm select-text'
+                      }
+                    >
+                      {title || item.videoUrl}
+                    </p>
+                    {title && (
+                      <p
+                        className="truncate text-xs text-muted-foreground/80 select-text"
+                        title={item.videoUrl}
+                      >
+                        {item.videoUrl}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {platformLabel(item.videoUrl)} · {formatTime(item.createdAt)}
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={title ? `解析播放 ${title}` : '解析播放'}
+                    title="解析播放"
+                    disabled={openingId === item.id}
+                    onClick={() => void play(item)}
+                  >
+                    {openingId === item.id ? <Loader2 className="animate-spin" /> : <Play />}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={copiedId === item.id ? '已复制链接' : '复制链接'}
+                    title={copiedId === item.id ? '已复制' : '复制链接'}
+                    onClick={() => void copyLink(item)}
+                  >
+                    {copiedId === item.id ? <Check /> : <Copy />}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={title ? `删除 ${title}` : '删除收藏'}
+                    onClick={async () => setItems(await api.favorites.remove(item.id))}
+                  >
+                    <Trash2 />
+                  </Button>
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>

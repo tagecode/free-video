@@ -50,6 +50,7 @@ const api: AppApi = {
   favorites: {
     list: () => ipcRenderer.invoke('favorites:list'),
     add: (input) => ipcRenderer.invoke('favorites:add', input),
+    fillTitles: () => ipcRenderer.invoke('favorites:fill-titles'),
     remove: (id) => ipcRenderer.invoke('favorites:remove', id)
   },
   updater: {

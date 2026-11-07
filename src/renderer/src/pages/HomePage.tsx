@@ -1,7 +1,8 @@
 import { isHttpUrl } from '@shared/join-url'
 import { platformLabel } from '@shared/platform'
 import { Link2, Loader2, Play, RotateCw, Square } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { PlayerSurface } from '@/components/PlayerSurface'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { isPlayRequest } from '@/lib/return-to-player'
 import { useLinesStore } from '@/store/lines'
 import { usePlayerStore } from '@/store/player'
 import { useSettingsStore } from '@/store/settings'
@@ -27,7 +29,11 @@ function Chip({ label, value }: { label: string; value: string }): React.JSX.Ele
 }
 
 export function HomePage(): React.JSX.Element {
-  const [videoUrl, setVideoUrl] = useState('')
+  const location = useLocation()
+  const request = isPlayRequest(location.state) ? location.state : null
+  const [videoUrl, setVideoUrl] = useState(() =>
+    request && isHttpUrl(request.videoUrl) ? request.videoUrl : ''
+  )
   const lines = useLinesStore((state) => state.lines)
   const open = usePlayerStore((state) => state.open)
   const status = usePlayerStore((state) => state.status)
@@ -37,7 +43,7 @@ export function HomePage(): React.JSX.Element {
   const settings = useSettingsStore((state) => state.settings)
   const patchSettings = useSettingsStore((state) => state.patch)
   const [lineId, setLineId] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(request?.error ?? null)
 
   const enabledLines = useMemo(() => lines.filter((line) => line.enabled), [lines])
   const currentLineId = enabledLines.some((line) => line.id === lineId)
@@ -49,29 +55,34 @@ export function HomePage(): React.JSX.Element {
   const busy = status.state === 'loading'
   const playing = status.state === 'playing'
 
-  const handlePlay = async (): Promise<void> => {
-    setError(null)
-    if (!isHttpUrl(videoUrl)) {
-      setError('请输入 http/https 开头的视频页面地址')
-      return
-    }
-    if (!currentLineId) {
-      setError('请先启用至少一条解析线路')
-      return
-    }
-    await patchSettings({ lastLineId: currentLineId })
-    const { failure, lineId: actualLineId } = await open(videoUrl, currentLineId)
-    if (failure) {
-      setError(failure)
-      return
-    }
-    // 自动降级会落到别的线路上，下拉框和"上次使用"都得跟着改，
-    // 否则界面上显示的和实际在播的不是同一条。
-    if (actualLineId && actualLineId !== currentLineId) {
-      setLineId(actualLineId)
-      await patchSettings({ lastLineId: actualLineId })
-    }
-  }
+  const playUrl = useCallback(
+    async (url: string, selectedLineId: string): Promise<void> => {
+      setError(null)
+      if (!isHttpUrl(url)) {
+        setError('请输入 http/https 开头的视频页面地址')
+        return
+      }
+      if (!selectedLineId) {
+        setError('请先启用至少一条解析线路')
+        return
+      }
+      await patchSettings({ lastLineId: selectedLineId })
+      const { failure, lineId: actualLineId } = await open(url, selectedLineId)
+      if (failure) {
+        setError(failure)
+        return
+      }
+      // 自动降级会落到别的线路上，下拉框和"上次使用"都得跟着改，
+      // 否则界面上显示的和实际在播的不是同一条。
+      if (actualLineId && actualLineId !== selectedLineId) {
+        setLineId(actualLineId)
+        await patchSettings({ lastLineId: actualLineId })
+      }
+    },
+    [open, patchSettings]
+  )
+
+  const handlePlay = (): Promise<void> => playUrl(videoUrl, currentLineId)
 
   const handleLineChange = (nextLineId: string): void => {
     setLineId(nextLineId)

@@ -1,17 +1,22 @@
 import { platformLabel } from '@shared/platform'
 import type { HistoryItem } from '@shared/types'
 import { formatTime } from '@/lib/utils'
-import { Clock, Play, Trash2 } from 'lucide-react'
+import { Clock, Loader2, Play, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
+import { returnToPlayer } from '@/lib/return-to-player'
+import { useLinesStore } from '@/store/lines'
 import { usePlayerStore } from '@/store/player'
 import { useSettingsStore } from '@/store/settings'
 
 export function HistoryPage(): React.JSX.Element {
   const [items, setItems] = useState<HistoryItem[]>([])
+  const [openingId, setOpeningId] = useState<string | null>(null)
+  const lines = useLinesStore((state) => state.lines)
+  const settings = useSettingsStore((state) => state.settings)
   const open = usePlayerStore((state) => state.open)
   const patchSettings = useSettingsStore((state) => state.patch)
   const navigate = useNavigate()
@@ -27,16 +32,21 @@ export function HistoryPage(): React.JSX.Element {
   }, [])
 
   const play = async (item: HistoryItem): Promise<void> => {
-    if (!item.lineId) {
-      navigate('/')
-      return
+    if (openingId) return
+    setOpeningId(item.id)
+    try {
+      await returnToPlayer({
+        videoUrl: item.videoUrl,
+        lines,
+        preferredLineId: item.lineId,
+        lastLineId: settings.lastLineId,
+        open,
+        patchSettings,
+        navigate
+      })
+    } finally {
+      setOpeningId(null)
     }
-    const { lineId } = await open(item.videoUrl, item.lineId)
-    // 首页下拉框按 lastLineId 回显，降级后要记成真正播放的那条
-    if (lineId) {
-      void patchSettings({ lastLineId: lineId })
-    }
-    navigate('/')
   }
 
   return (
@@ -96,10 +106,12 @@ export function HistoryPage(): React.JSX.Element {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label={title ? `播放 ${title}` : '播放'}
+                    aria-label={title ? `解析播放 ${title}` : '解析播放'}
+                    title="解析播放"
+                    disabled={openingId === item.id}
                     onClick={() => void play(item)}
                   >
-                    <Play />
+                    {openingId === item.id ? <Loader2 className="animate-spin" /> : <Play />}
                   </Button>
                   <Button
                     size="icon"
