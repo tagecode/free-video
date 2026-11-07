@@ -1,6 +1,6 @@
 import { DISCLAIMER_TEXT } from '@shared/constants'
 import { useEffect } from 'react'
-import { HashRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { HistoryPage } from '@/pages/HistoryPage'
 import { HomePage } from '@/pages/HomePage'
 import { LinesPage } from '@/pages/LinesPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { isPlayRequest } from '@/lib/return-to-player'
 import { useLinesStore } from '@/store/lines'
 import { usePlayerStore } from '@/store/player'
 import { useSettingsStore } from '@/store/settings'
@@ -73,6 +74,12 @@ function DisclaimerGate(): React.JSX.Element | null {
   )
 }
 
+function PlayerRoute(): React.JSX.Element {
+  const location = useLocation()
+  const nonce = isPlayRequest(location.state) ? String(location.state.nonce) : 'home'
+  return <HomePage key={nonce} />
+}
+
 export default function App(): React.JSX.Element {
   const loadSettings = useSettingsStore((state) => state.load)
   const loadLines = useLinesStore((state) => state.load)
@@ -97,7 +104,7 @@ export default function App(): React.JSX.Element {
       <DisclaimerGate />
       <Layout>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<PlayerRoute />} />
           <Route path="/lines" element={<LinesPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />

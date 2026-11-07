@@ -12,7 +12,6 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -23,7 +22,14 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { api } from '@/lib/api'
+import { useLinesStore } from '@/store/lines'
 import { useSettingsStore } from '@/store/settings'
+
+const HEALTH_INTERVALS = [
+  { value: '0', label: '关闭' },
+  { value: String(30 * 60 * 1000), label: '30 分钟' },
+  { value: String(60 * 60 * 1000), label: '1 小时' }
+] as const
 
 function Row({
   title,
@@ -51,6 +57,8 @@ export function SettingsPage(): React.JSX.Element {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [update, setUpdate] = useState<UpdateStatus | null>(null)
   const [disclaimerOpen, setDisclaimerOpen] = useState(false)
+  const [clearStep, setClearStep] = useState<0 | 1 | 2>(0)
+  const [dataMessage, setDataMessage] = useState<string | null>(null)
 
   useEffect(() => {
     void api.app.info().then(setInfo)
@@ -59,6 +67,19 @@ export function SettingsPage(): React.JSX.Element {
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]): void => {
     void patch({ [key]: value } as Partial<Settings>)
+  }
+
+  const exportConfig = async (): Promise<void> => {
+    const result = await api.data.exportConfig()
+    setDataMessage(result.canceled ? '已取消导出' : '配置已导出')
+  }
+
+  const clearAll = async (): Promise<void> => {
+    const result = await api.data.clearAll()
+    useSettingsStore.setState({ settings: result.settings })
+    useLinesStore.setState({ lines: result.lines, error: null })
+    setClearStep(0)
+    setDataMessage('已清空设置、线路、历史和收藏')
   }
 
   const checkUpdate = async (): Promise<void> => {
@@ -134,6 +155,24 @@ export function SettingsPage(): React.JSX.Element {
 
       <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">
         <h2 className="pt-2 text-xs font-medium text-muted-foreground">线路检测</h2>
+        <Row title="定时检测" description="启动后会先检测一次；之后按这个间隔重复，默认关闭">
+          <Select
+            value={String(settings.healthCheckIntervalMs)}
+            onValueChange={(value) => set('healthCheckIntervalMs', Number(value))}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {HEALTH_INTERVALS.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Row>
+        <Separator />
         <Row title="检测超时" description="单条线路探测的最长毫秒数（3000-30000）">
           <Input
             type="number"
@@ -163,6 +202,15 @@ export function SettingsPage(): React.JSX.Element {
               <SelectItem value="manual">手动</SelectItem>
             </SelectContent>
           </Select>
+        </Row>
+        <Separator />
+        <Row title="User-Agent" description="留空则使用系统默认，作用于主界面与播放器">
+          <Input
+            className="w-64"
+            placeholder="默认"
+            value={settings.userAgent}
+            onChange={(event) => set('userAgent', event.target.value)}
+          />
         </Row>
         {settings.proxyMode === 'manual' && (
           <>
@@ -214,11 +262,42 @@ export function SettingsPage(): React.JSX.Element {
         </Row>
         <Separator />
         <Row title="数据目录" description={info?.userDataPath}>
-          <Label className="text-xs text-muted-foreground">
-            settings / lines / history / favorites
-          </Label>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => void exportConfig()}>
+              导出配置
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setClearStep(1)}>
+              清空全部数据
+            </Button>
+          </div>
         </Row>
+        {dataMessage && <p className="pb-3 text-xs text-muted-foreground">{dataMessage}</p>}
       </section>
+
+      <Dialog open={clearStep > 0} onOpenChange={(open) => !open && setClearStep(0)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{clearStep === 1 ? '清空全部数据？' : '再次确认'}</DialogTitle>
+            <DialogDescription>
+              {clearStep === 1
+                ? '将清除设置、线路改动、播放历史和收藏，恢复到初始状态。'
+                : '此操作不可恢复。确定要清空全部数据吗？'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClearStep(0)}>
+              取消
+            </Button>
+            {clearStep === 1 ? (
+              <Button onClick={() => setClearStep(2)}>继续</Button>
+            ) : (
+              <Button variant="destructive" onClick={() => void clearAll()}>
+                清空
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={disclaimerOpen} onOpenChange={setDisclaimerOpen}>
         <DialogContent className="max-w-xl">

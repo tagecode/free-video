@@ -57,6 +57,13 @@ const api: AppApi = {
     check: () => ipcRenderer.invoke('updater:check'),
     install: () => ipcRenderer.invoke('updater:install'),
     onStatus: (callback) => subscribe<UpdateStatus>(NOTIFY.updaterStatus, callback)
+  },
+  clipboard: {
+    onSuggestion: (callback) => subscribe<string | null>(NOTIFY.clipboardSuggestion, callback)
+  },
+  data: {
+    exportConfig: () => ipcRenderer.invoke('data:export'),
+    clearAll: () => ipcRenderer.invoke('data:clear')
   }
 }
 

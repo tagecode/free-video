@@ -73,15 +73,24 @@ async function probe(line: ParseLine, timeoutMs: number): Promise<LineHealth> {
   }
 }
 
-export async function checkLines(
+let queued: Promise<unknown> = Promise.resolve()
+
+export function checkLines(
   lines: ParseLine[],
   timeoutMs: number
 ): Promise<Record<string, LineHealth>> {
-  const results = await mapWithConcurrency(lines, HEALTH_CONCURRENCY, (line) =>
-    probe(line, timeoutMs)
+  const run = queued.then(async () => {
+    const results = await mapWithConcurrency(lines, HEALTH_CONCURRENCY, (line) =>
+      probe(line, timeoutMs)
+    )
+    return results.reduce<Record<string, LineHealth>>((acc, health, index) => {
+      acc[lines[index].id] = health
+      return acc
+    }, {})
+  })
+  queued = run.then(
+    () => undefined,
+    () => undefined
   )
-  return results.reduce<Record<string, LineHealth>>((acc, health, index) => {
-    acc[lines[index].id] = health
-    return acc
-  }, {})
+  return run
 }

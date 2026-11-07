@@ -51,6 +51,9 @@ export interface IpcContract {
 
   'updater:check': () => UpdateStatus
   'updater:install': () => void
+
+  'data:export': () => { canceled: boolean }
+  'data:clear': () => { settings: Settings; lines: ParseLine[] }
 }
 
 export type IpcChannel = keyof IpcContract
@@ -61,7 +64,8 @@ export const NOTIFY = {
   playerState: 'player:state',
   linesHealth: 'lines:health-changed',
   linesChanged: 'lines:changed',
-  updaterStatus: 'updater:status'
+  updaterStatus: 'updater:status',
+  clipboardSuggestion: 'clipboard:suggestion'
 } as const
 
 export interface PlayerStatePayload {

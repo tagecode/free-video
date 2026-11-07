@@ -55,4 +55,8 @@ function remove(id: string): FavoriteItem[] {
   return store.write(list().filter((item) => item.id !== id))
 }
 
-export const favoritesService = { list, add, remove, fillTitles }
+function clear(): FavoriteItem[] {
+  return store.write([])
+}
+
+export const favoritesService = { list, add, remove, clear, fillTitles }

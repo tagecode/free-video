@@ -1,4 +1,5 @@
 import { registerAppHandlers } from './handlers/app'
+import { registerDataHandlers } from './handlers/data'
 import { registerFavoriteHandlers } from './handlers/favorites'
 import { registerHistoryHandlers } from './handlers/history'
 import { registerLineHandlers } from './handlers/lines'
@@ -18,4 +19,5 @@ export function registerIpcHandlers(): void {
   registerHistoryHandlers()
   registerFavoriteHandlers()
   registerUpdaterHandlers()
+  registerDataHandlers()
 }

@@ -11,6 +11,7 @@ import {
 import type * as React from 'react'
 import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { ClipboardPrompt } from '@/components/ClipboardPrompt'
 import { TitleBar } from '@/components/TitleBar'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
@@ -184,7 +185,10 @@ export function Layout({ children }: { children: React.ReactNode }): React.JSX.E
       <TitleBar />
       <div className="flex min-h-0 flex-1">
         <Sidebar />
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">{children}</main>
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <ClipboardPrompt />
+          {children}
+        </main>
       </div>
       <StatusBar />
     </div>

@@ -65,4 +65,11 @@ export interface AppApi {
     install: () => Promise<void>
     onStatus: (callback: (status: UpdateStatus) => void) => () => void
   }
+  clipboard: {
+    onSuggestion: (callback: (videoUrl: string | null) => void) => () => void
+  }
+  data: {
+    exportConfig: () => Promise<{ canceled: boolean }>
+    clearAll: () => Promise<{ settings: Settings; lines: ParseLine[] }>
+  }
 }

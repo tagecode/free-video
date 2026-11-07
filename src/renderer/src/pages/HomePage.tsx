@@ -1,7 +1,7 @@
 import { isHttpUrl } from '@shared/join-url'
 import { platformLabel } from '@shared/platform'
-import { Link2, Loader2, Play, RotateCw, Square } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { Check, Copy, Link2, Loader2, Play, RotateCw, Square } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { PlayerSurface } from '@/components/PlayerSurface'
@@ -15,6 +15,7 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { isPlayRequest } from '@/lib/return-to-player'
+import { copyText } from '@/lib/utils'
 import { useLinesStore } from '@/store/lines'
 import { usePlayerStore } from '@/store/player'
 import { useSettingsStore } from '@/store/settings'
@@ -44,6 +45,7 @@ export function HomePage(): React.JSX.Element {
   const patchSettings = useSettingsStore((state) => state.patch)
   const [lineId, setLineId] = useState('')
   const [error, setError] = useState<string | null>(request?.error ?? null)
+  const [copied, setCopied] = useState(false)
 
   const enabledLines = useMemo(() => lines.filter((line) => line.enabled), [lines])
   const currentLineId = enabledLines.some((line) => line.id === lineId)
@@ -83,6 +85,19 @@ export function HomePage(): React.JSX.Element {
   )
 
   const handlePlay = (): Promise<void> => playUrl(videoUrl, currentLineId)
+
+  const parseUrl = status.playUrl ?? ''
+
+  useEffect(() => {
+    if (!copied) return
+    const timer = window.setTimeout(() => setCopied(false), 1500)
+    return () => window.clearTimeout(timer)
+  }, [copied])
+
+  const copyParseUrl = async (): Promise<void> => {
+    if (!parseUrl) return
+    if (await copyText(parseUrl)) setCopied(true)
+  }
 
   const handleLineChange = (nextLineId: string): void => {
     setLineId(nextLineId)
@@ -147,6 +162,19 @@ export function HomePage(): React.JSX.Element {
             {busy ? <Loader2 className="animate-spin" /> : <Play className="fill-current" />}
             {busy ? '解析中' : '开始播放'}
           </Button>
+
+          {parseUrl && (
+            <Button
+              size="icon"
+              variant="outline"
+              className="size-10 border-border/60 bg-background/60"
+              aria-label={copied ? '已复制解析地址' : '复制解析地址'}
+              title={copied ? '已复制' : '复制解析地址'}
+              onClick={() => void copyParseUrl()}
+            >
+              {copied ? <Check /> : <Copy />}
+            </Button>
+          )}
 
           {playing && (
             <>

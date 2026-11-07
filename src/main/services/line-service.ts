@@ -223,6 +223,11 @@ function resetBuiltin(): ParseLine[] {
   return list()
 }
 
+function resetAll(): ParseLine[] {
+  store.reset()
+  return list()
+}
+
 export const lineService = {
   list,
   enabled,
@@ -234,5 +239,6 @@ export const lineService = {
   applyHealth,
   importJson,
   exportJson,
-  resetBuiltin
+  resetBuiltin,
+  resetAll
 }

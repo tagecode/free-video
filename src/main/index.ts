@@ -4,7 +4,8 @@ import { APP_NAME } from '@shared/constants'
 import { registerIpcHandlers } from './ipc'
 import { logger } from './services/logger'
 import { playerService } from './services/player-service'
-import { initUpdater } from './services/updater'
+import { startHealthSchedule } from './services/health-schedule'
+import { checkForUpdates, initUpdater } from './services/updater'
 import { createMainWindow } from './window'
 
 app.setName(APP_NAME)
@@ -34,6 +35,10 @@ if (!gotLock) {
 
     registerIpcHandlers()
     initUpdater()
+    if (app.isPackaged) {
+      void checkForUpdates()
+    }
+    startHealthSchedule()
 
     mainWindow = createMainWindow()
     playerService.attach(mainWindow)

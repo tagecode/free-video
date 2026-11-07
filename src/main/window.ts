@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, nativeImage, nativeTheme, shell } from 'electron'
 import { APP_NAME } from '@shared/constants'
 import { is } from '@electron-toolkit/utils'
+import { attachClipboardWatch } from './services/clipboard-watch'
 import { getWindowState, saveWindowState } from './services/window-state'
 import { registerShortcuts } from './shortcuts'
 
@@ -75,6 +76,7 @@ export function createMainWindow(): BrowserWindow {
   window.on('ready-to-show', () => window.show())
 
   registerShortcuts(window, window.webContents)
+  attachClipboardWatch(window)
 
   // 主题切换后系统控件要跟着换色，否则浅色界面顶着一排深色按钮
   const onThemeUpdated = (): void => {
