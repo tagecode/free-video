@@ -1,6 +1,6 @@
 import { isHttpUrl } from '@shared/join-url'
 import { platformLabel } from '@shared/platform'
-import { Check, Copy, Link2, Loader2, Play, RotateCw, Square } from 'lucide-react'
+import { Check, Copy, Link2, Loader2, Maximize, Play, RotateCw, Square } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
@@ -39,6 +39,7 @@ export function HomePage(): React.JSX.Element {
   const open = usePlayerStore((state) => state.open)
   const status = usePlayerStore((state) => state.status)
   const reload = usePlayerStore((state) => state.reload)
+  const toggleFullscreen = usePlayerStore((state) => state.toggleFullscreen)
   const close = usePlayerStore((state) => state.close)
   const setOverlayOpen = usePlayerStore((state) => state.setOverlayOpen)
   const settings = useSettingsStore((state) => state.settings)
@@ -186,6 +187,16 @@ export function HomePage(): React.JSX.Element {
                 title="重新加载"
               >
                 <RotateCw />
+              </Button>
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-10 border-border/60 bg-background/60"
+                aria-label="全屏"
+                title="全屏"
+                onClick={() => void toggleFullscreen()}
+              >
+                <Maximize />
               </Button>
               <Button
                 size="icon"

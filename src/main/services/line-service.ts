@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import builtinData from '../../../resources/lines.default.json'
+import { resolveLineImport } from '@shared/line-import'
 import { builtinLineFileSchema, linesFileSchema, parseLineInputSchema } from '@shared/schemas'
 import type {
   BuiltinLine,
@@ -170,40 +171,56 @@ function applyHealth(health: Record<string, LineHealth>): void {
   store.write(file)
 }
 
-function importJson(json: string): ImportResult {
-  const parsed: unknown = JSON.parse(json)
-  if (!Array.isArray(parsed)) {
-    throw new Error('导入内容必须是线路数组')
+function importJson(json: string, replaceEndpoints: string[] = []): ImportResult {
+  const plan = resolveLineImport(list(), json, replaceEndpoints)
+  if (plan.additions.length === 0 && plan.updates.length === 0) {
+    return {
+      imported: plan.imported,
+      replaced: plan.replaced,
+      kept: plan.kept,
+      skipped: plan.skipped
+    }
   }
 
   const file = store.read()
-  const existing = new Set(list().map((line) => line.endpoint))
-  let imported = 0
-  let skipped = 0
-
-  for (const item of parsed) {
-    const result = parseLineInputSchema.safeParse(item)
-    if (!result.success || existing.has(result.data.endpoint)) {
-      skipped += 1
-      continue
-    }
-    existing.add(result.data.endpoint)
+  for (const candidate of plan.additions) {
     file.custom.push({
       id: randomUUID(),
-      name: result.data.name,
-      endpoint: result.data.endpoint,
-      joinMode: result.data.joinMode,
-      note: result.data.note,
+      name: candidate.name,
+      endpoint: candidate.endpoint,
+      joinMode: candidate.joinMode,
+      note: candidate.note,
       builtin: false,
       enabled: true,
       order: nextOrder(file),
       status: 'unknown'
     })
-    imported += 1
   }
-
+  for (const update of plan.updates) {
+    if (update.builtin) {
+      file.builtinOverrides[update.id] = {
+        ...file.builtinOverrides[update.id],
+        name: update.incoming.name
+      }
+      continue
+    }
+    const index = file.custom.findIndex((line) => line.id === update.id)
+    if (index < 0) continue
+    file.custom[index] = {
+      ...file.custom[index],
+      name: update.incoming.name,
+      endpoint: update.incoming.endpoint,
+      joinMode: update.incoming.joinMode,
+      note: update.incoming.note
+    }
+  }
   store.write(file)
-  return { imported, skipped }
+  return {
+    imported: plan.imported,
+    replaced: plan.replaced,
+    kept: plan.kept,
+    skipped: plan.skipped
+  }
 }
 
 function exportJson(): string {

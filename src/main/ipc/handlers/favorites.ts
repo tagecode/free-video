@@ -8,6 +8,7 @@ export function registerFavoriteHandlers(): void {
     const title = input.title.trim() || (await fetchVideoTitle(input.videoUrl))
     return favoritesService.add({ ...input, title })
   })
+  handle('favorites:update-note', (id, note) => favoritesService.updateNote(id, note))
   handle('favorites:fill-titles', () => favoritesService.fillTitles())
   handle('favorites:remove', (id) => favoritesService.remove(id))
 }

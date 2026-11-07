@@ -25,7 +25,8 @@ const api: AppApi = {
     toggle: (id, enabled) => ipcRenderer.invoke('lines:toggle', id, enabled),
     reorder: (ids) => ipcRenderer.invoke('lines:reorder', ids),
     check: (ids) => ipcRenderer.invoke('lines:check', ids),
-    importJson: (json) => ipcRenderer.invoke('lines:import', json),
+    importJson: (json, replaceEndpoints) =>
+      ipcRenderer.invoke('lines:import', json, replaceEndpoints),
     exportJson: () => ipcRenderer.invoke('lines:export'),
     resetBuiltin: () => ipcRenderer.invoke('lines:reset-builtin'),
     onHealthChanged: (callback) =>
@@ -50,6 +51,7 @@ const api: AppApi = {
   favorites: {
     list: () => ipcRenderer.invoke('favorites:list'),
     add: (input) => ipcRenderer.invoke('favorites:add', input),
+    updateNote: (id, note) => ipcRenderer.invoke('favorites:update-note', id, note),
     fillTitles: () => ipcRenderer.invoke('favorites:fill-titles'),
     remove: (id) => ipcRenderer.invoke('favorites:remove', id)
   },

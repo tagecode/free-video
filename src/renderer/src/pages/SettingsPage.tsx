@@ -1,4 +1,10 @@
-import { APP_NAME, DISCLAIMER_TEXT } from '@shared/constants'
+import {
+  APP_NAME,
+  DISCLAIMER_TEXT,
+  LICENSE_NAME,
+  LICENSE_URL,
+  PROJECT_URL
+} from '@shared/constants'
 import type { AppInfo, Settings, UpdateStatus } from '@shared/types'
 import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
@@ -253,6 +259,22 @@ export function SettingsPage(): React.JSX.Element {
               </Button>
             )}
           </div>
+        </Row>
+        <Separator />
+        <Row title="项目主页" description="源代码、问题反馈与发布说明">
+          <Button size="sm" variant="outline" asChild>
+            <a href={PROJECT_URL} target="_blank" rel="noreferrer">
+              GitHub
+            </a>
+          </Button>
+        </Row>
+        <Separator />
+        <Row title="开源许可" description={LICENSE_NAME}>
+          <Button size="sm" variant="outline" asChild>
+            <a href={LICENSE_URL} target="_blank" rel="noreferrer">
+              查看许可
+            </a>
+          </Button>
         </Row>
         <Separator />
         <Row title="免责声明" description="首次启动确认过的使用条款与内容边界">

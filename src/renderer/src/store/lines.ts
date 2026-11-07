@@ -1,3 +1,4 @@
+import { formatImportResult } from '@shared/line-import'
 import type { ParseLine, ParseLineInput } from '@shared/types'
 import { create } from 'zustand'
 import { api } from '@/lib/api'
@@ -14,7 +15,7 @@ interface LinesStore {
   toggle: (id: string, enabled: boolean) => Promise<void>
   reorder: (ids: string[]) => Promise<void>
   check: (ids?: string[]) => Promise<void>
-  importJson: (json: string) => Promise<string>
+  importJson: (json: string, replaceEndpoints?: string[]) => Promise<string>
   resetBuiltin: () => Promise<void>
   subscribe: () => () => void
 }
@@ -78,10 +79,10 @@ export const useLinesStore = create<LinesStore>((set) => ({
     }
   },
 
-  importJson: async (json) => {
-    const result = await api.lines.importJson(json)
+  importJson: async (json, replaceEndpoints) => {
+    const result = await api.lines.importJson(json, replaceEndpoints)
     set({ lines: await api.lines.list() })
-    return `导入 ${result.imported} 条，跳过 ${result.skipped} 条`
+    return formatImportResult(result)
   },
 
   resetBuiltin: async () => {

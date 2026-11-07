@@ -28,7 +28,7 @@ export interface IpcContract {
   'lines:toggle': (id: string, enabled: boolean) => ParseLine[]
   'lines:reorder': (ids: string[]) => ParseLine[]
   'lines:check': (ids?: string[]) => Record<string, LineHealth>
-  'lines:import': (json: string) => ImportResult
+  'lines:import': (json: string, replaceEndpoints?: string[]) => ImportResult
   'lines:export': () => string
   'lines:reset-builtin': () => ParseLine[]
 
@@ -46,6 +46,7 @@ export interface IpcContract {
 
   'favorites:list': () => FavoriteItem[]
   'favorites:add': (input: FavoriteInput) => FavoriteItem[]
+  'favorites:update-note': (id: string, note: string) => FavoriteItem[]
   'favorites:fill-titles': () => FavoriteItem[]
   'favorites:remove': (id: string) => FavoriteItem[]
 

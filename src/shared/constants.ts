@@ -1,6 +1,9 @@
 import { settingsSchema } from './schemas'
 
 export const APP_NAME = 'Free Video'
+export const PROJECT_URL = 'https://github.com/tagecode/free-video'
+export const LICENSE_NAME = 'MIT'
+export const LICENSE_URL = 'https://github.com/tagecode/free-video/blob/main/LICENSE'
 export const PLAYER_PARTITION = 'persist:player'
 export const HEALTH_PARTITION = 'persist:health'
 

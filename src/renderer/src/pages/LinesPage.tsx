@@ -1,3 +1,5 @@
+import { previewParseUrl } from '@shared/join-url'
+import { classifyLineImport, type ImportConflict } from '@shared/line-import'
 import type { LineStatus, ParseLine, ParseLineInput } from '@shared/types'
 import { cn } from '@/lib/utils'
 import { Loader2, Pencil, Plus, RotateCcw, Trash2, Upload, Download, Activity } from 'lucide-react'
@@ -65,7 +67,14 @@ export function LinesPage(): React.JSX.Element {
   const [formError, setFormError] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
+  const [conflicts, setConflicts] = useState<ImportConflict[] | null>(null)
+  const [choices, setChoices] = useState<Record<string, 'keep' | 'replace'>>({})
   const [notice, setNotice] = useState<string | null>(null)
+  const preview = previewParseUrl(form)
+  const previewHint =
+    form.joinMode === 'template' && form.endpoint.trim() && !form.endpoint.includes('{url}')
+      ? '模板模式需要在地址中包含 {url}'
+      : null
 
   useEffect(() => {
     if (lines.length === 0) void load()
@@ -100,14 +109,38 @@ export function LinesPage(): React.JSX.Element {
     }
   }
 
+  const openImport = (): void => {
+    setImportText('')
+    setConflicts(null)
+    setChoices({})
+    setImportOpen(true)
+  }
+
   const submitImport = async (): Promise<void> => {
     try {
-      setNotice(await useLinesStore.getState().importJson(importText))
+      const classified = classifyLineImport(importText, lines)
+      if (classified.conflicts.length > 0 && !conflicts) {
+        setConflicts(classified.conflicts)
+        setChoices(
+          Object.fromEntries(classified.conflicts.map((item) => [item.endpoint, 'keep' as const]))
+        )
+        return
+      }
+      const replaceEndpoints = (conflicts ?? [])
+        .filter((item) => choices[item.endpoint] === 'replace')
+        .map((item) => item.endpoint)
+      setNotice(await useLinesStore.getState().importJson(importText, replaceEndpoints))
       setImportOpen(false)
       setImportText('')
+      setConflicts(null)
     } catch (error) {
       setNotice(errorMessage(error))
     }
+  }
+
+  const chooseAll = (choice: 'keep' | 'replace'): void => {
+    if (!conflicts) return
+    setChoices(Object.fromEntries(conflicts.map((item) => [item.endpoint, choice])))
   }
 
   const exportJson = async (): Promise<void> => {
@@ -127,7 +160,7 @@ export function LinesPage(): React.JSX.Element {
               {checking ? <Loader2 className="animate-spin" /> : <Activity />}
               检测全部
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            <Button variant="outline" size="sm" onClick={openImport}>
               <Upload />
               导入
             </Button>
@@ -273,6 +306,11 @@ export function LinesPage(): React.JSX.Element {
               </Select>
             </div>
 
+            {preview && (
+              <p className="break-all text-xs text-muted-foreground">预览拼接结果：{preview}</p>
+            )}
+            {previewHint && <p className="text-xs text-destructive">{previewHint}</p>}
+
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="line-note">备注</Label>
               <Input
@@ -299,29 +337,78 @@ export function LinesPage(): React.JSX.Element {
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>导入线路</DialogTitle>
+            <DialogTitle>{conflicts ? '处理重复线路' : '导入线路'}</DialogTitle>
             <DialogDescription>
-              粘贴 JSON 数组，每项包含 name、endpoint、joinMode（prefix/template）与可选 note。
-              重复地址会被自动跳过。
+              {conflicts
+                ? '这些地址已经存在。可以选择保留现有线路，或用导入内容覆盖。内置线路只会更新名称。'
+                : '粘贴 JSON 数组，每项包含 name、endpoint、joinMode（prefix/template）与可选 note。格式不对或文件内重复的地址会被跳过。'}
             </DialogDescription>
           </DialogHeader>
 
-          <textarea
-            value={importText}
-            onChange={(event) => setImportText(event.target.value)}
-            spellCheck={false}
-            className="h-56 w-full resize-none rounded-md border bg-transparent p-3 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            placeholder={
-              '[\n  { "name": "线路 A", "endpoint": "https://a.com/?url=", "joinMode": "prefix" }\n]'
-            }
-          />
+          {conflicts ? (
+            <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => chooseAll('keep')}>
+                  全部保留
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => chooseAll('replace')}>
+                  全部覆盖
+                </Button>
+              </div>
+              {conflicts.map((item) => (
+                <div key={item.endpoint} className="rounded-lg border border-border/70 px-3 py-2">
+                  <p className="truncate text-sm">
+                    现有「{item.existingName}」 / 导入「{item.incoming.name}」
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{item.endpoint}</p>
+                  {item.builtin && (
+                    <p className="text-xs text-muted-foreground">内置线路只会更新名称</p>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={choices[item.endpoint] === 'keep' ? 'default' : 'outline'}
+                      onClick={() => setChoices({ ...choices, [item.endpoint]: 'keep' })}
+                    >
+                      保留现有
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={choices[item.endpoint] === 'replace' ? 'default' : 'outline'}
+                      onClick={() => setChoices({ ...choices, [item.endpoint]: 'replace' })}
+                    >
+                      使用导入
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <textarea
+              value={importText}
+              onChange={(event) => {
+                setImportText(event.target.value)
+                setConflicts(null)
+              }}
+              spellCheck={false}
+              className="h-56 w-full resize-none rounded-md border bg-transparent p-3 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              placeholder={
+                '[\n  { "name": "线路 A", "endpoint": "https://a.com/?url=", "joinMode": "prefix" }\n]'
+              }
+            />
+          )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportOpen(false)}>
               取消
             </Button>
+            {conflicts && (
+              <Button variant="outline" onClick={() => setConflicts(null)}>
+                返回修改
+              </Button>
+            )}
             <Button disabled={!importText.trim()} onClick={() => void submitImport()}>
-              导入
+              {conflicts ? '确认导入' : '导入'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -18,6 +18,7 @@ interface PlayerStore {
   open: (videoUrl: string, lineId: string) => Promise<OpenOutcome>
   close: () => Promise<void>
   reload: () => Promise<void>
+  toggleFullscreen: () => Promise<void>
   setVisible: (visible: boolean) => void
   setOverlayOpen: (open: boolean) => void
   subscribe: () => () => void
@@ -49,6 +50,10 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 
   reload: async () => {
     await api.player.reload()
+  },
+
+  toggleFullscreen: async () => {
+    await api.player.toggleFullscreen()
   },
 
   setVisible: (visible) => set({ visible }),

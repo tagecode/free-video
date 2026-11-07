@@ -33,7 +33,7 @@ export interface AppApi {
     toggle: (id: string, enabled: boolean) => Promise<ParseLine[]>
     reorder: (ids: string[]) => Promise<ParseLine[]>
     check: (ids?: string[]) => Promise<Record<string, LineHealth>>
-    importJson: (json: string) => Promise<ImportResult>
+    importJson: (json: string, replaceEndpoints?: string[]) => Promise<ImportResult>
     exportJson: () => Promise<string>
     resetBuiltin: () => Promise<ParseLine[]>
     onHealthChanged: (callback: (health: Record<string, LineHealth>) => void) => () => void
@@ -57,6 +57,7 @@ export interface AppApi {
   favorites: {
     list: () => Promise<FavoriteItem[]>
     add: (input: FavoriteInput) => Promise<FavoriteItem[]>
+    updateNote: (id: string, note: string) => Promise<FavoriteItem[]>
     fillTitles: () => Promise<FavoriteItem[]>
     remove: (id: string) => Promise<FavoriteItem[]>
   }

@@ -2,7 +2,7 @@ import { isHttpUrl } from '@shared/join-url'
 import { detectPlatform, platformLabel } from '@shared/platform'
 import type { FavoriteItem } from '@shared/types'
 import { formatTime } from '@/lib/utils'
-import { Check, Copy, Heart, Loader2, Play, Plus, Trash2 } from 'lucide-react'
+import { Check, Copy, Heart, Loader2, Pencil, Play, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
@@ -18,6 +18,9 @@ import { useSettingsStore } from '@/store/settings'
 export function FavoritesPage(): React.JSX.Element {
   const [items, setItems] = useState<FavoriteItem[]>([])
   const [value, setValue] = useState('')
+  const [note, setNote] = useState('')
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [noteDraft, setNoteDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [openingId, setOpeningId] = useState<string | null>(null)
@@ -65,10 +68,12 @@ export function FavoritesPage(): React.JSX.Element {
         await api.favorites.add({
           videoUrl: value,
           platform: detectPlatform(value)?.id ?? 'unknown',
-          title: ''
+          title: '',
+          note: note.trim() || undefined
         })
       )
       setValue('')
+      setNote('')
       setError(null)
     } catch (caught) {
       setError(errorMessage(caught))
@@ -97,6 +102,16 @@ export function FavoritesPage(): React.JSX.Element {
     }
     setCopiedId(item.id)
     setError(null)
+  }
+
+  const saveNote = async (id: string): Promise<void> => {
+    try {
+      setItems(await api.favorites.updateNote(id, noteDraft))
+      setEditingNoteId(null)
+      setError(null)
+    } catch (caught) {
+      setError(errorMessage(caught))
+    }
   }
 
   const play = async (item: FavoriteItem): Promise<void> => {
@@ -129,6 +144,16 @@ export function FavoritesPage(): React.JSX.Element {
             if (event.key === 'Enter') void add()
           }}
         />
+        <Input
+          className="w-48"
+          value={note}
+          placeholder="备注名称，可选"
+          maxLength={200}
+          onChange={(event) => setNote(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') void add()
+          }}
+        />
         <Button disabled={saving} onClick={() => void add()}>
           {saving ? <Loader2 className="animate-spin" /> : <Plus />}
           {saving ? '读取标题' : '收藏'}
@@ -150,20 +175,45 @@ export function FavoritesPage(): React.JSX.Element {
           <ul>
             {items.map((item) => {
               const title = item.title.trim()
+              const remark = item.note?.trim() ?? ''
+              const displayName = remark || title || item.videoUrl
               return (
                 <li
                   key={item.id}
                   className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
                 >
                   <div className="min-w-0 flex-1">
-                    <p
-                      className={
-                        title ? 'truncate text-sm font-medium' : 'truncate text-sm select-text'
-                      }
-                    >
-                      {title || item.videoUrl}
-                    </p>
-                    {title && (
+                    {editingNoteId === item.id ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={noteDraft}
+                          placeholder="备注名称"
+                          maxLength={200}
+                          onChange={(event) => setNoteDraft(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') void saveNote(item.id)
+                            if (event.key === 'Escape') setEditingNoteId(null)
+                          }}
+                        />
+                        <Button size="sm" onClick={() => void saveNote(item.id)}>
+                          保存
+                        </Button>
+                      </div>
+                    ) : (
+                      <p
+                        className={
+                          displayName === item.videoUrl
+                            ? 'truncate text-sm select-text'
+                            : 'truncate text-sm font-medium'
+                        }
+                      >
+                        {displayName}
+                      </p>
+                    )}
+                    {remark && title && remark !== title && (
+                      <p className="truncate text-xs text-muted-foreground/80">{title}</p>
+                    )}
+                    {displayName !== item.videoUrl && (
                       <p
                         className="truncate text-xs text-muted-foreground/80 select-text"
                         title={item.videoUrl}
@@ -178,7 +228,21 @@ export function FavoritesPage(): React.JSX.Element {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label={title ? `解析播放 ${title}` : '解析播放'}
+                    aria-label={remark ? `修改备注 ${remark}` : '添加备注'}
+                    title="备注"
+                    onClick={() => {
+                      setEditingNoteId(item.id)
+                      setNoteDraft(remark)
+                    }}
+                  >
+                    <Pencil />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={
+                      displayName !== item.videoUrl ? `解析播放 ${displayName}` : '解析播放'
+                    }
                     title="解析播放"
                     disabled={openingId === item.id}
                     onClick={() => void play(item)}
@@ -197,7 +261,7 @@ export function FavoritesPage(): React.JSX.Element {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label={title ? `删除 ${title}` : '删除收藏'}
+                    aria-label={displayName !== item.videoUrl ? `删除 ${displayName}` : '删除收藏'}
                     onClick={async () => setItems(await api.favorites.remove(item.id))}
                   >
                     <Trash2 />

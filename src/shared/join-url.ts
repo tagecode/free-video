@@ -1,5 +1,15 @@
 import type { ParseLine } from './schemas'
 
+/** 线路表单里用来演示拼接结果的示例视频页，不发起真实播放。 */
+export const PARSE_PREVIEW_VIDEO_URL = 'https://v.qq.com/x/cover/example.html'
+
+export function previewParseUrl(line: Pick<ParseLine, 'endpoint' | 'joinMode'>): string | null {
+  const endpoint = line.endpoint.trim()
+  if (!endpoint) return null
+  if (line.joinMode === 'template' && !endpoint.includes('{url}')) return null
+  return buildParseUrl({ endpoint, joinMode: line.joinMode }, PARSE_PREVIEW_VIDEO_URL)
+}
+
 export function buildParseUrl(
   line: Pick<ParseLine, 'endpoint' | 'joinMode'>,
   videoUrl: string

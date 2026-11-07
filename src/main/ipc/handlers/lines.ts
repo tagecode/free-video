@@ -37,8 +37,8 @@ export function registerLineHandlers(): void {
     return health
   })
 
-  handle('lines:import', (json) => {
-    const result = lineService.importJson(json)
+  handle('lines:import', (json, replaceEndpoints) => {
+    const result = lineService.importJson(json, replaceEndpoints)
     notifyLines(lineService.list())
     return result
   })

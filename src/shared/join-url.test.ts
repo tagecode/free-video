@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildParseUrl, isHttpUrl } from './join-url'
+import { PARSE_PREVIEW_VIDEO_URL, buildParseUrl, isHttpUrl, previewParseUrl } from './join-url'
 
 describe('buildParseUrl', () => {
   const videoUrl = 'https://v.qq.com/x/cover/abc.html?ptag=1'
@@ -36,6 +36,22 @@ describe('buildParseUrl', () => {
     expect(
       buildParseUrl({ endpoint: 'https://jx.test/play?u={url}', joinMode: 'template' }, tricky)
     ).toBe(`https://jx.test/play?u=${encodeURIComponent(tricky)}`)
+  })
+})
+
+describe('previewParseUrl', () => {
+  it('用示例视频页展示模板拼接结果', () => {
+    expect(
+      previewParseUrl({ endpoint: 'https://jx.test/play?u={url}', joinMode: 'template' })
+    ).toBe(`https://jx.test/play?u=${encodeURIComponent(PARSE_PREVIEW_VIDEO_URL)}`)
+  })
+
+  it('模板里没有占位符时不给出误导性预览', () => {
+    expect(previewParseUrl({ endpoint: 'https://jx.test/', joinMode: 'template' })).toBeNull()
+  })
+
+  it('地址为空时不预览', () => {
+    expect(previewParseUrl({ endpoint: '  ', joinMode: 'prefix' })).toBeNull()
   })
 })
 

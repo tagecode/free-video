@@ -55,6 +55,8 @@ export interface PlayResult {
 
 export interface ImportResult {
   imported: number
+  replaced: number
+  kept: number
   skipped: number
 }
 
