@@ -3,6 +3,9 @@ productName: Free Video
 directories:
   buildResources: build
   output: dist
+extraResources:
+  - from: resources/icon.png
+    to: icon.png
 files:
   - '!**/.vscode/*'
   - '!src/**'

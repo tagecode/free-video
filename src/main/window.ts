@@ -1,5 +1,6 @@
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { BrowserWindow, nativeTheme, shell } from 'electron'
+import { app, BrowserWindow, nativeImage, nativeTheme, shell } from 'electron'
 import { APP_NAME } from '@shared/constants'
 import { is } from '@electron-toolkit/utils'
 import { getWindowState, saveWindowState } from './services/window-state'
@@ -9,6 +10,16 @@ import { registerShortcuts } from './shortcuts'
 // Windows/Linux 用系统的窗口控件覆盖层，界面主体因此完全一致。
 const TITLE_BAR_HEIGHT = 44
 const isMac = process.platform === 'darwin'
+
+function appIcon(): Electron.NativeImage | undefined {
+  const file = [
+    join(import.meta.dirname, '../../resources/icon.png'),
+    join(process.resourcesPath, 'icon.png')
+  ].find((candidate) => existsSync(candidate))
+  if (!file) return undefined
+  const image = nativeImage.createFromPath(file)
+  return image.isEmpty() ? undefined : image
+}
 
 function titleBarOverlay(): Electron.TitleBarOverlay {
   return {
@@ -29,6 +40,9 @@ function syncTitleBarOverlay(window: BrowserWindow): void {
 
 export function createMainWindow(): BrowserWindow {
   const state = getWindowState()
+  const icon = appIcon()
+  // 开发时进程仍是 Electron 本体，不单独设的话 Dock / 任务栏继续显示默认原子图标
+  if (isMac && icon) app.dock?.setIcon(icon)
 
   const window = new BrowserWindow({
     x: state.x,
@@ -39,6 +53,7 @@ export function createMainWindow(): BrowserWindow {
     minHeight: 680,
     show: false,
     title: APP_NAME,
+    icon,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#171a22' : '#f7f8fa',
     autoHideMenuBar: true,
     titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
