@@ -2,6 +2,7 @@ import { BrowserWindow, WebContentsView, session, shell } from 'electron'
 import { BLANK_PROBE_DELAY_MS, PLAYER_PARTITION } from '@shared/constants'
 import { buildParseUrl } from '@shared/join-url'
 import { NOTIFY } from '@shared/ipc'
+import { normalizeVideoTitle } from '@shared/video-title'
 import type { OpenPlayerInput, PlayResult, PlayerStatus, Rect } from '@shared/types'
 import { logger } from './logger'
 import { registerShortcuts } from '../shortcuts'
@@ -298,6 +299,13 @@ class PlayerService {
 
   currentStatus(): PlayerStatus {
     return this.status
+  }
+
+  /** 解析页偶尔会把作品名写进 document.title，原页面抓不到标题时用作兜底。 */
+  pageTitle(): string {
+    const contents = this.view?.webContents
+    if (!contents || contents.isDestroyed()) return ''
+    return normalizeVideoTitle(contents.getTitle())
   }
 }
 

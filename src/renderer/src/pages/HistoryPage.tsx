@@ -70,29 +70,47 @@ export function HistoryPage(): React.JSX.Element {
           </div>
         ) : (
           <ul>
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{item.videoUrl}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {platformLabel(item.videoUrl)} · {formatTime(item.playedAt)}
-                  </p>
-                </div>
-                <Button size="icon" variant="ghost" onClick={() => void play(item)}>
-                  <Play />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={async () => setItems(await api.history.remove(item.id))}
+            {items.map((item) => {
+              const title = item.title.trim()
+              return (
+                <li
+                  key={item.id}
+                  className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
                 >
-                  <Trash2 />
-                </Button>
-              </li>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <p className={title ? 'truncate text-sm font-medium' : 'truncate text-sm'}>
+                      {title || item.videoUrl}
+                    </p>
+                    {title && (
+                      <p
+                        className="truncate text-xs text-muted-foreground/80"
+                        title={item.videoUrl}
+                      >
+                        {item.videoUrl}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {platformLabel(item.videoUrl)} · {formatTime(item.playedAt)}
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label={title ? `播放 ${title}` : '播放'}
+                    onClick={() => void play(item)}
+                  >
+                    <Play />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={async () => setItems(await api.history.remove(item.id))}
+                  >
+                    <Trash2 />
+                  </Button>
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
