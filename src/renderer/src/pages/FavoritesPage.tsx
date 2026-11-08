@@ -7,7 +7,16 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { api } from '@/lib/api'
 import { returnToPlayer } from '@/lib/return-to-player'
 import { errorMessage } from '@/lib/utils'
@@ -19,8 +28,10 @@ export function FavoritesPage(): React.JSX.Element {
   const [items, setItems] = useState<FavoriteItem[]>([])
   const [value, setValue] = useState('')
   const [note, setNote] = useState('')
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<FavoriteItem | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
+  const [noteError, setNoteError] = useState<string | null>(null)
+  const [savingNote, setSavingNote] = useState(false)
   const [saving, setSaving] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [openingId, setOpeningId] = useState<string | null>(null)
@@ -104,13 +115,30 @@ export function FavoritesPage(): React.JSX.Element {
     setError(null)
   }
 
-  const saveNote = async (id: string): Promise<void> => {
+  const openNote = (item: FavoriteItem): void => {
+    setEditing(item)
+    setNoteDraft(item.note?.trim() ?? '')
+    setNoteError(null)
+  }
+
+  const closeNote = (): void => {
+    if (savingNote) return
+    setEditing(null)
+    setNoteError(null)
+  }
+
+  const saveNote = async (): Promise<void> => {
+    if (!editing || savingNote) return
+    setSavingNote(true)
     try {
-      setItems(await api.favorites.updateNote(id, noteDraft))
-      setEditingNoteId(null)
+      setItems(await api.favorites.updateNote(editing.id, noteDraft))
+      setEditing(null)
+      setNoteError(null)
       setError(null)
     } catch (caught) {
-      setError(errorMessage(caught))
+      setNoteError(errorMessage(caught))
+    } finally {
+      setSavingNote(false)
     }
   }
 
@@ -183,33 +211,15 @@ export function FavoritesPage(): React.JSX.Element {
                   className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 hover:bg-accent/40"
                 >
                   <div className="min-w-0 flex-1">
-                    {editingNoteId === item.id ? (
-                      <div className="flex gap-2">
-                        <Input
-                          value={noteDraft}
-                          placeholder="备注名称"
-                          maxLength={200}
-                          onChange={(event) => setNoteDraft(event.target.value)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') void saveNote(item.id)
-                            if (event.key === 'Escape') setEditingNoteId(null)
-                          }}
-                        />
-                        <Button size="sm" onClick={() => void saveNote(item.id)}>
-                          保存
-                        </Button>
-                      </div>
-                    ) : (
-                      <p
-                        className={
-                          displayName === item.videoUrl
-                            ? 'truncate text-sm select-text'
-                            : 'truncate text-sm font-medium'
-                        }
-                      >
-                        {displayName}
-                      </p>
-                    )}
+                    <p
+                      className={
+                        displayName === item.videoUrl
+                          ? 'truncate text-sm select-text'
+                          : 'truncate text-sm font-medium'
+                      }
+                    >
+                      {displayName}
+                    </p>
                     {remark && title && remark !== title && (
                       <p className="truncate text-xs text-muted-foreground/80">{title}</p>
                     )}
@@ -230,10 +240,7 @@ export function FavoritesPage(): React.JSX.Element {
                     variant="ghost"
                     aria-label={remark ? `修改备注 ${remark}` : '添加备注'}
                     title="备注"
-                    onClick={() => {
-                      setEditingNoteId(item.id)
-                      setNoteDraft(remark)
-                    }}
+                    onClick={() => openNote(item)}
                   >
                     <Pencil />
                   </Button>
@@ -272,6 +279,42 @@ export function FavoritesPage(): React.JSX.Element {
           </ul>
         )}
       </div>
+
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && closeNote()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑备注</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? `给「${editing.title.trim() || editing.videoUrl}」写一个方便找回的名称。留空则继续显示作品标题。`
+                : '给这条收藏写一个方便找回的名称。'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="favorite-note">备注名称</Label>
+            <Input
+              id="favorite-note"
+              value={noteDraft}
+              placeholder="例如：周末再看"
+              maxLength={200}
+              autoFocus
+              onChange={(event) => setNoteDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void saveNote()
+              }}
+            />
+            {noteError && <p className="text-xs text-destructive">{noteError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" disabled={savingNote} onClick={closeNote}>
+              取消
+            </Button>
+            <Button disabled={savingNote} onClick={() => void saveNote()}>
+              {savingNote ? '保存中' : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
