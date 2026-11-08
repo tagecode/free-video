@@ -1,8 +1,21 @@
 import { previewParseUrl } from '@shared/join-url'
 import { classifyLineImport, type ImportConflict } from '@shared/line-import'
+import { moveLineOrder, type LineMove } from '@shared/line-order'
 import type { LineStatus, ParseLine, ParseLineInput } from '@shared/types'
 import { cn } from '@/lib/utils'
-import { Loader2, Pencil, Plus, RotateCcw, Trash2, Upload, Download, Activity } from 'lucide-react'
+import {
+  Activity,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpToLine,
+  Download,
+  Loader2,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Upload
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -59,6 +72,7 @@ export function LinesPage(): React.JSX.Element {
   const remove = useLinesStore((state) => state.remove)
   const upsert = useLinesStore((state) => state.upsert)
   const check = useLinesStore((state) => state.check)
+  const reorder = useLinesStore((state) => state.reorder)
   const resetBuiltin = useLinesStore((state) => state.resetBuiltin)
 
   const [editing, setEditing] = useState<ParseLine | null>(null)
@@ -143,6 +157,15 @@ export function LinesPage(): React.JSX.Element {
     setChoices(Object.fromEntries(conflicts.map((item) => [item.endpoint, choice])))
   }
 
+  const move = (id: string, action: LineMove): void => {
+    const next = moveLineOrder(
+      lines.map((line) => line.id),
+      id,
+      action
+    )
+    if (next) void reorder(next)
+  }
+
   const exportJson = async (): Promise<void> => {
     const json = await api.lines.exportJson()
     await navigator.clipboard.writeText(json)
@@ -153,7 +176,7 @@ export function LinesPage(): React.JSX.Element {
     <div className="flex h-full flex-col gap-4 p-6">
       <PageHeader
         title="线路管理"
-        description={`共 ${lines.length} 条，启用 ${lines.filter((line) => line.enabled).length} 条。内置线路可禁用但不可删除。`}
+        description={`共 ${lines.length} 条，启用 ${lines.filter((line) => line.enabled).length} 条。靠前的线路会优先播放和自动切换。内置线路可禁用但不可删除。`}
         actions={
           <>
             <Button variant="outline" size="sm" disabled={checking} onClick={() => void check()}>
@@ -199,7 +222,7 @@ export function LinesPage(): React.JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {lines.map((line) => (
+            {lines.map((line, index) => (
               <tr key={line.id} className="border-t border-border/60 hover:bg-accent/40">
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
@@ -231,6 +254,36 @@ export function LinesPage(): React.JSX.Element {
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex justify-end gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`置顶 ${line.name}`}
+                      title="置顶"
+                      disabled={index === 0}
+                      onClick={() => move(line.id, 'top')}
+                    >
+                      <ArrowUpToLine />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`上移 ${line.name}`}
+                      title="上移"
+                      disabled={index === 0}
+                      onClick={() => move(line.id, 'up')}
+                    >
+                      <ArrowUp />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`下移 ${line.name}`}
+                      title="下移"
+                      disabled={index === lines.length - 1}
+                      onClick={() => move(line.id, 'down')}
+                    >
+                      <ArrowDown />
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => void check([line.id])}>
                       <Activity />
                     </Button>
