@@ -34,7 +34,8 @@ export interface AppApi {
     reorder: (ids: string[]) => Promise<ParseLine[]>
     check: (ids?: string[]) => Promise<Record<string, LineHealth>>
     importJson: (json: string, replaceEndpoints?: string[]) => Promise<ImportResult>
-    exportJson: () => Promise<string>
+    pickImport: () => Promise<{ canceled: boolean; json?: string }>
+    exportFile: () => Promise<{ canceled: boolean }>
     resetBuiltin: () => Promise<ParseLine[]>
     onHealthChanged: (callback: (health: Record<string, LineHealth>) => void) => () => void
     onChanged: (callback: (lines: ParseLine[]) => void) => () => void

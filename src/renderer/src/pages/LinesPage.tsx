@@ -123,24 +123,33 @@ export function LinesPage(): React.JSX.Element {
     }
   }
 
-  const openImport = (): void => {
-    setImportText('')
-    setConflicts(null)
-    setChoices({})
-    setImportOpen(true)
-  }
-
-  const submitImport = async (): Promise<void> => {
+  const beginImport = async (): Promise<void> => {
     try {
-      const classified = classifyLineImport(importText, lines)
-      if (classified.conflicts.length > 0 && !conflicts) {
-        setConflicts(classified.conflicts)
-        setChoices(
-          Object.fromEntries(classified.conflicts.map((item) => [item.endpoint, 'keep' as const]))
-        )
+      const picked = await api.lines.pickImport()
+      if (picked.canceled || !picked.json) {
+        setNotice('已取消导入')
         return
       }
-      const replaceEndpoints = (conflicts ?? [])
+      const classified = classifyLineImport(picked.json, lines)
+      if (classified.conflicts.length === 0) {
+        setNotice(await useLinesStore.getState().importJson(picked.json, []))
+        return
+      }
+      setImportText(picked.json)
+      setConflicts(classified.conflicts)
+      setChoices(
+        Object.fromEntries(classified.conflicts.map((item) => [item.endpoint, 'keep' as const]))
+      )
+      setImportOpen(true)
+    } catch (error) {
+      setNotice(errorMessage(error))
+    }
+  }
+
+  const confirmImport = async (): Promise<void> => {
+    if (!conflicts) return
+    try {
+      const replaceEndpoints = conflicts
         .filter((item) => choices[item.endpoint] === 'replace')
         .map((item) => item.endpoint)
       setNotice(await useLinesStore.getState().importJson(importText, replaceEndpoints))
@@ -166,10 +175,13 @@ export function LinesPage(): React.JSX.Element {
     if (next) void reorder(next)
   }
 
-  const exportJson = async (): Promise<void> => {
-    const json = await api.lines.exportJson()
-    await navigator.clipboard.writeText(json)
-    setNotice(`已复制 ${lines.length} 条线路配置到剪贴板`)
+  const exportLines = async (): Promise<void> => {
+    try {
+      const result = await api.lines.exportFile()
+      setNotice(result.canceled ? '已取消导出' : '线路已导出')
+    } catch (error) {
+      setNotice(errorMessage(error))
+    }
   }
 
   return (
@@ -183,11 +195,11 @@ export function LinesPage(): React.JSX.Element {
               {checking ? <Loader2 className="animate-spin" /> : <Activity />}
               检测全部
             </Button>
-            <Button variant="outline" size="sm" onClick={openImport}>
+            <Button variant="outline" size="sm" onClick={() => void beginImport()}>
               <Upload />
               导入
             </Button>
-            <Button variant="outline" size="sm" onClick={() => void exportJson()}>
+            <Button variant="outline" size="sm" onClick={() => void exportLines()}>
               <Download />
               导出
             </Button>
@@ -387,82 +399,67 @@ export function LinesPage(): React.JSX.Element {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+      <Dialog
+        open={importOpen}
+        onOpenChange={(open) => {
+          setImportOpen(open)
+          if (!open) {
+            setImportText('')
+            setConflicts(null)
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{conflicts ? '处理重复线路' : '导入线路'}</DialogTitle>
+            <DialogTitle>处理重复线路</DialogTitle>
             <DialogDescription>
-              {conflicts
-                ? '这些地址已经存在。可以选择保留现有线路，或用导入内容覆盖。内置线路只会更新名称。'
-                : '粘贴 JSON 数组，每项包含 name、endpoint、joinMode（prefix/template）与可选 note。格式不对或文件内重复的地址会被跳过。'}
+              文件里这些地址已经存在。可以选择保留现有线路，或用文件内容覆盖。内置线路只会更新名称。
             </DialogDescription>
           </DialogHeader>
 
-          {conflicts ? (
-            <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
-              <div className="flex justify-end gap-2">
-                <Button size="sm" variant="outline" onClick={() => chooseAll('keep')}>
-                  全部保留
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => chooseAll('replace')}>
-                  全部覆盖
-                </Button>
-              </div>
-              {conflicts.map((item) => (
-                <div key={item.endpoint} className="rounded-lg border border-border/70 px-3 py-2">
-                  <p className="truncate text-sm">
-                    现有「{item.existingName}」 / 导入「{item.incoming.name}」
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">{item.endpoint}</p>
-                  {item.builtin && (
-                    <p className="text-xs text-muted-foreground">内置线路只会更新名称</p>
-                  )}
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant={choices[item.endpoint] === 'keep' ? 'default' : 'outline'}
-                      onClick={() => setChoices({ ...choices, [item.endpoint]: 'keep' })}
-                    >
-                      保留现有
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={choices[item.endpoint] === 'replace' ? 'default' : 'outline'}
-                      onClick={() => setChoices({ ...choices, [item.endpoint]: 'replace' })}
-                    >
-                      使用导入
-                    </Button>
-                  </div>
-                </div>
-              ))}
+          <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="outline" onClick={() => chooseAll('keep')}>
+                全部保留
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => chooseAll('replace')}>
+                全部覆盖
+              </Button>
             </div>
-          ) : (
-            <textarea
-              value={importText}
-              onChange={(event) => {
-                setImportText(event.target.value)
-                setConflicts(null)
-              }}
-              spellCheck={false}
-              className="h-56 w-full resize-none rounded-md border bg-transparent p-3 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              placeholder={
-                '[\n  { "name": "线路 A", "endpoint": "https://a.com/?url=", "joinMode": "prefix" }\n]'
-              }
-            />
-          )}
+            {(conflicts ?? []).map((item) => (
+              <div key={item.endpoint} className="rounded-lg border border-border/70 px-3 py-2">
+                <p className="truncate text-sm">
+                  现有「{item.existingName}」 / 导入「{item.incoming.name}」
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{item.endpoint}</p>
+                {item.builtin && (
+                  <p className="text-xs text-muted-foreground">内置线路只会更新名称</p>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={choices[item.endpoint] === 'keep' ? 'default' : 'outline'}
+                    onClick={() => setChoices({ ...choices, [item.endpoint]: 'keep' })}
+                  >
+                    保留现有
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={choices[item.endpoint] === 'replace' ? 'default' : 'outline'}
+                    onClick={() => setChoices({ ...choices, [item.endpoint]: 'replace' })}
+                  >
+                    使用导入
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportOpen(false)}>
               取消
             </Button>
-            {conflicts && (
-              <Button variant="outline" onClick={() => setConflicts(null)}>
-                返回修改
-              </Button>
-            )}
-            <Button disabled={!importText.trim()} onClick={() => void submitImport()}>
-              {conflicts ? '确认导入' : '导入'}
-            </Button>
+            <Button onClick={() => void confirmImport()}>确认导入</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

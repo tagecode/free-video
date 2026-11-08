@@ -1,6 +1,7 @@
 import { NOTIFY } from '@shared/ipc'
 import type { LineHealth, ParseLine } from '@shared/types'
 import { checkLines } from '../../services/health-service'
+import { pickLinesFile, saveLinesFile } from '../../services/line-file'
 import { lineService } from '../../services/line-service'
 import { broadcast } from '../broadcast'
 import { handle } from '../register'
@@ -43,7 +44,9 @@ export function registerLineHandlers(): void {
     return result
   })
 
-  handle('lines:export', () => lineService.exportJson())
+  handle('lines:pick-import', () => pickLinesFile())
+
+  handle('lines:export', () => saveLinesFile())
 
   handle('lines:reset-builtin', () => notifyLines(lineService.resetBuiltin()))
 }

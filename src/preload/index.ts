@@ -27,7 +27,8 @@ const api: AppApi = {
     check: (ids) => ipcRenderer.invoke('lines:check', ids),
     importJson: (json, replaceEndpoints) =>
       ipcRenderer.invoke('lines:import', json, replaceEndpoints),
-    exportJson: () => ipcRenderer.invoke('lines:export'),
+    pickImport: () => ipcRenderer.invoke('lines:pick-import'),
+    exportFile: () => ipcRenderer.invoke('lines:export'),
     resetBuiltin: () => ipcRenderer.invoke('lines:reset-builtin'),
     onHealthChanged: (callback) =>
       subscribe<Record<string, LineHealth>>(NOTIFY.linesHealth, callback),

@@ -29,7 +29,8 @@ export interface IpcContract {
   'lines:reorder': (ids: string[]) => ParseLine[]
   'lines:check': (ids?: string[]) => Record<string, LineHealth>
   'lines:import': (json: string, replaceEndpoints?: string[]) => ImportResult
-  'lines:export': () => string
+  'lines:pick-import': () => { canceled: boolean; json?: string }
+  'lines:export': () => { canceled: boolean }
   'lines:reset-builtin': () => ParseLine[]
 
   'player:open': (input: OpenPlayerRequest) => PlayResult
