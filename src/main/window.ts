@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, nativeImage, nativeTheme, shell } from 'electron'
-import { APP_NAME } from '@shared/constants'
+import { APP_NAME, WINDOW_CHROME } from '@shared/constants'
 import { is } from '@electron-toolkit/utils'
 import { attachClipboardWatch } from './services/clipboard-watch'
 import { getWindowState, saveWindowState } from './services/window-state'
@@ -22,17 +22,25 @@ function appIcon(): Electron.NativeImage | undefined {
   return image.isEmpty() ? undefined : image
 }
 
+function chromeColors(): (typeof WINDOW_CHROME)[keyof typeof WINDOW_CHROME] {
+  return nativeTheme.shouldUseDarkColors ? WINDOW_CHROME.dark : WINDOW_CHROME.light
+}
+
 function titleBarOverlay(): Electron.TitleBarOverlay {
   return {
-    color: nativeTheme.shouldUseDarkColors ? '#171a22' : '#f7f8fa',
-    symbolColor: nativeTheme.shouldUseDarkColors ? '#9aa4b2' : '#4b5563',
+    // 覆盖层只负责画系统按钮，底色保持透明交给页面：标题栏的半透明底、品牌色光晕
+    // 和下边框都是渲染进程画的，一旦覆盖层填纯色，右上角就会盖出与标题栏其余部分
+    // 不一致的一块色差，并且会把下边框截断。
+    color: '#00000000',
+    symbolColor: chromeColors().symbol,
     height: TITLE_BAR_HEIGHT
   }
 }
 
-function syncTitleBarOverlay(window: BrowserWindow): void {
+function syncWindowChrome(window: BrowserWindow): void {
   if (isMac) return
   try {
+    window.setBackgroundColor(chromeColors().background)
     window.setTitleBarOverlay(titleBarOverlay())
   } catch {
     /* 窗口已销毁或平台不支持覆盖层时保持系统默认控件 */
@@ -55,7 +63,7 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     title: APP_NAME,
     icon,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#171a22' : '#f7f8fa',
+    backgroundColor: chromeColors().background,
     autoHideMenuBar: true,
     titleBarStyle: isMac ? 'hiddenInset' : 'hidden',
     ...(isMac
@@ -78,9 +86,9 @@ export function createMainWindow(): BrowserWindow {
   registerShortcuts(window, window.webContents)
   attachClipboardWatch(window)
 
-  // 主题切换后系统控件要跟着换色，否则浅色界面顶着一排深色按钮
+  // 主题切换后窗口底色和系统按钮图案要跟着换色，否则浅色界面顶着一排深色按钮
   const onThemeUpdated = (): void => {
-    if (!window.isDestroyed()) syncTitleBarOverlay(window)
+    if (!window.isDestroyed()) syncWindowChrome(window)
   }
   nativeTheme.on('updated', onThemeUpdated)
 

@@ -7,6 +7,13 @@ export const LICENSE_URL = 'https://github.com/tagecode/free-video/blob/main/LIC
 export const PLAYER_PARTITION = 'persist:player'
 export const HEALTH_PARTITION = 'persist:health'
 
+// 主进程读不到 CSS 变量，窗口底色和系统窗口按钮的图案色只能在这里镜像一份；
+// 取值必须与 src/renderer/src/assets/main.css 的 --background / --muted-foreground 保持一致。
+export const WINDOW_CHROME = {
+  light: { background: '#f3f4f7', symbol: '#646974' },
+  dark: { background: '#0d0f15', symbol: '#9499a0' }
+} as const
+
 export const MAX_HISTORY = 100
 // 健康检查要真实渲染整页，并发太高会拖慢所有线路的判定
 export const HEALTH_CONCURRENCY = 3

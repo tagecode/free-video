@@ -204,8 +204,9 @@ app.whenReady()
 ### 5.2 窗口管理
 
 - 默认 `1440×900`，最小 `1024×680`，位置与尺寸记忆到 storage；
-- 骨架阶段使用系统原生标题栏（`titleBarStyle` 保持默认）：跨平台行为一致、无需处理拖拽区吞事件；
-  后续若引入自绘标题栏，再切换为 `hiddenInset`（mac）+ 自绘（win/linux），并由 `components/layout/TitleBar.tsx` 统一承载；
+- 三平台统一 44px 自绘标题栏（`TitleBar.tsx`）：macOS 用 `hiddenInset` 让红绿灯浮在左上，Windows/Linux 用系统窗口控件覆盖层（`titleBarOverlay`）；
+- 覆盖层**只画按钮、底色透明**（`color: '#00000000'`）：标题栏的半透明底、品牌光晕和下边框都由渲染进程绘制，覆盖层一旦填纯色就会在右上角盖出一块色差，并把它下方的下边框截断；
+- 主进程读不到 CSS 变量，窗口底色与按钮图案色镜像在 `shared/constants.ts` 的 `WINDOW_CHROME`，必须与 `main.css` 的 `--background` / `--muted-foreground` 保持一致，换主题时随 `nativeTheme` 一起更新；
 - 标题栏拖拽区用 CSS `-webkit-app-region: drag`，**所有可交互元素必须显式 `no-drag`**（见 §11 已知问题）；
 - 窗口 `resize` / `maximize` / `enter-full-screen` 事件统一转发给 `PlayerService` 重新计算播放容器 bounds。
 
