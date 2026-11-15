@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   NO_ENABLED_LINE,
+  autoPlayRequestState,
   isPlayRequest,
   pickPlayLineId,
   playRequestState,
@@ -104,5 +105,19 @@ describe('playRequestState', () => {
     expect(isPlayRequest(state)).toBe(true)
     expect(state.videoUrl).toBe('https://example.com/a')
     expect(state.error).toBeNull()
+  })
+})
+
+describe('autoPlayRequestState', () => {
+  it('剪贴板入口带上 autoPlay，解析页据此直接开播', () => {
+    const state = autoPlayRequestState('https://example.com/a')
+    expect(isPlayRequest(state)).toBe(true)
+    expect(state.autoPlay).toBe(true)
+    expect(state.error).toBeUndefined()
+  })
+
+  it('历史/收藏回跳不带 autoPlay，避免和 returnToPlayer 重复解析', () => {
+    expect(playRequestState('https://example.com/a').autoPlay).toBeUndefined()
+    expect(playRequestState('https://example.com/a', NO_ENABLED_LINE).autoPlay).toBeUndefined()
   })
 })

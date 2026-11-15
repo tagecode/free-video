@@ -1,7 +1,7 @@
 import { isHttpUrl } from '@shared/join-url'
 import { platformLabel } from '@shared/platform'
 import { Check, Copy, Link2, Loader2, Maximize, Play, RotateCw, Square } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { PageHeader } from '@/components/PageHeader'
 import { PlayerSurface } from '@/components/PlayerSurface'
@@ -36,6 +36,7 @@ export function HomePage(): React.JSX.Element {
     request && isHttpUrl(request.videoUrl) ? request.videoUrl : ''
   )
   const lines = useLinesStore((state) => state.lines)
+  const linesLoaded = useLinesStore((state) => state.loaded)
   const open = usePlayerStore((state) => state.open)
   const status = usePlayerStore((state) => state.status)
   const reload = usePlayerStore((state) => state.reload)
@@ -43,10 +44,12 @@ export function HomePage(): React.JSX.Element {
   const close = usePlayerStore((state) => state.close)
   const setOverlayOpen = usePlayerStore((state) => state.setOverlayOpen)
   const settings = useSettingsStore((state) => state.settings)
+  const settingsLoaded = useSettingsStore((state) => state.loaded)
   const patchSettings = useSettingsStore((state) => state.patch)
   const [lineId, setLineId] = useState('')
   const [error, setError] = useState<string | null>(request?.error ?? null)
   const [copied, setCopied] = useState(false)
+  const autoStarted = useRef<number | null>(null)
 
   const enabledLines = useMemo(() => lines.filter((line) => line.enabled), [lines])
   const currentLineId = enabledLines.some((line) => line.id === lineId)
@@ -86,6 +89,16 @@ export function HomePage(): React.JSX.Element {
   )
 
   const handlePlay = (): Promise<void> => playUrl(videoUrl, currentLineId)
+
+  // 剪贴板提示里点「解析此链接」，或其它入口带 autoPlay 跳进来时，直接开播；
+  // 历史/收藏走的是 returnToPlayer，它自己已经解析过再跳回来，这里不能重复开一次。
+  // 等线路和设置读完再开：否则会误报"请先启用至少一条解析线路"，或把上次使用的线路写坏。
+  useEffect(() => {
+    if (!request?.autoPlay || request.error || !linesLoaded || !settingsLoaded) return
+    if (autoStarted.current === request.nonce) return
+    autoStarted.current = request.nonce
+    void playUrl(request.videoUrl, currentLineId)
+  }, [request, linesLoaded, settingsLoaded, currentLineId, playUrl])
 
   const parseUrl = status.playUrl ?? ''
 

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
-import { playRequestState } from '@/lib/return-to-player'
+import { autoPlayRequestState } from '@/lib/return-to-player'
 
 export function ClipboardPrompt(): React.JSX.Element | null {
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
@@ -27,7 +27,8 @@ export function ClipboardPrompt(): React.JSX.Element | null {
     const url = videoUrl
     dismissed.current = url
     setVideoUrl(null)
-    navigate('/', { state: playRequestState(url) })
+    // 点了「解析此链接」就是要看这个视频，带上 autoPlay 让解析页直接开播
+    navigate('/', { state: autoPlayRequestState(url) })
   }
 
   const ignore = (): void => {

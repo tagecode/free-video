@@ -7,12 +7,22 @@ export interface PlayRequest {
   videoUrl: string
   nonce: number
   error?: string | null
+  /** 入口处已经表达过"要解析这个链接"，解析页挂载后直接开播，不用再点一次「开始播放」 */
+  autoPlay?: boolean
 }
 
 export const NO_ENABLED_LINE = '请先启用至少一条解析线路'
 
 export function playRequestState(videoUrl: string, error?: string | null): PlayRequest {
   return { videoUrl, nonce: Date.now(), error }
+}
+
+/**
+ * 剪贴板提示这类入口用：用户点了「解析此链接」才走到这里，意图已经明确，
+ * 解析页不必再让用户点一次「开始播放」。
+ */
+export function autoPlayRequestState(videoUrl: string): PlayRequest {
+  return { ...playRequestState(videoUrl), autoPlay: true }
 }
 
 export function isPlayRequest(value: unknown): value is PlayRequest {
