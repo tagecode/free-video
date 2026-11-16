@@ -29,6 +29,12 @@ describe('settingsSchema', () => {
   it('未知主题取值被拒绝', () => {
     expect(settingsSchema.safeParse({ theme: 'sepia' }).success).toBe(false)
   })
+
+  it('关闭行为默认每次询问，非法取值被拒绝', () => {
+    expect(settingsSchema.parse({}).closeAction).toBe('ask')
+    expect(settingsSchema.safeParse({ closeAction: 'tray' }).success).toBe(true)
+    expect(settingsSchema.safeParse({ closeAction: 'minimize' }).success).toBe(false)
+  })
 })
 
 describe('httpUrlSchema', () => {

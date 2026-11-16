@@ -1,5 +1,6 @@
 import type {
   AppInfo,
+  CloseResponse,
   FavoriteInput,
   FavoriteItem,
   HistoryItem,
@@ -18,6 +19,9 @@ import type {
 
 export interface IpcContract {
   'app:info': () => AppInfo
+  'app:quit': () => void
+
+  'window:close-response': (response: CloseResponse) => void
 
   'settings:get': () => Settings
   'settings:patch': (patch: Partial<Settings>) => Settings
@@ -67,7 +71,8 @@ export const NOTIFY = {
   linesHealth: 'lines:health-changed',
   linesChanged: 'lines:changed',
   updaterStatus: 'updater:status',
-  clipboardSuggestion: 'clipboard:suggestion'
+  clipboardSuggestion: 'clipboard:suggestion',
+  closeRequest: 'window:close-request'
 } as const
 
 export interface PlayerStatePayload {

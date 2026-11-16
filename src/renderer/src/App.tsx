@@ -2,6 +2,7 @@ import { DISCLAIMER_TEXT } from '@shared/constants'
 import { useEffect } from 'react'
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
+import { ClosePrompt } from '@/components/ClosePrompt'
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import { HomePage } from '@/pages/HomePage'
 import { LinesPage } from '@/pages/LinesPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { isPlayRequest } from '@/lib/return-to-player'
+import { api } from '@/lib/api'
 import { useLinesStore } from '@/store/lines'
 import { usePlayerStore } from '@/store/player'
 import { useSettingsStore } from '@/store/settings'
@@ -64,7 +66,7 @@ function DisclaimerGate(): React.JSX.Element | null {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => window.close()}>
+          <Button variant="outline" onClick={() => void api.app.quit()}>
             退出
           </Button>
           <Button onClick={() => void patch({ disclaimerAccepted: true })}>我已阅读并同意</Button>
@@ -102,6 +104,7 @@ export default function App(): React.JSX.Element {
   return (
     <HashRouter>
       <DisclaimerGate />
+      <ClosePrompt />
       <Layout>
         <Routes>
           <Route path="/" element={<PlayerRoute />} />

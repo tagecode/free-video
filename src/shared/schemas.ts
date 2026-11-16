@@ -3,6 +3,8 @@ import { z } from 'zod'
 export const joinModeSchema = z.enum(['prefix', 'template'])
 export const lineStatusSchema = z.enum(['unknown', 'ok', 'fail', 'timeout', 'unsupported'])
 export const themeModeSchema = z.enum(['light', 'dark', 'system'])
+// 点窗口关闭按钮时的行为：ask 每次询问，tray 最小化到托盘，quit 直接退出
+export const closeActionSchema = z.enum(['ask', 'tray', 'quit'])
 
 export const httpUrlSchema = z
   .string()
@@ -42,6 +44,7 @@ export const lineHealthSchema = z.object({
 
 export const settingsSchema = z.object({
   theme: themeModeSchema.default('system'),
+  closeAction: closeActionSchema.default('ask'),
   autoFallback: z.boolean().default(true),
   maxFallbackAttempts: z.number().int().min(1).max(10).default(5),
   // 播放中在下拉框换线路是否立即重新解析；默认关闭，避免误触打断正在看的视频
@@ -126,6 +129,7 @@ export type Settings = z.infer<typeof settingsSchema>
 export type JoinMode = z.infer<typeof joinModeSchema>
 export type LineStatus = z.infer<typeof lineStatusSchema>
 export type ThemeMode = z.infer<typeof themeModeSchema>
+export type CloseAction = z.infer<typeof closeActionSchema>
 export type ParseLine = z.infer<typeof parseLineSchema>
 export type ParseLineInput = z.infer<typeof parseLineInputSchema>
 export type LineHealth = z.infer<typeof lineHealthSchema>

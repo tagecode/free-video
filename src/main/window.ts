@@ -1,9 +1,14 @@
-import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { app, BrowserWindow, nativeImage, nativeTheme, shell } from 'electron'
+import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import { APP_NAME, WINDOW_CHROME } from '@shared/constants'
+import { NOTIFY } from '@shared/ipc'
 import { is } from '@electron-toolkit/utils'
+import { appIcon } from './lib/app-icon'
+import { cancelCloseRequest, waitCloseResponse } from './lib/close-request'
+import { beginQuit, isQuitting } from './lib/quit-state'
 import { attachClipboardWatch } from './services/clipboard-watch'
+import { readSettings, patchSettings } from './services/settings-service'
+import { ensureTray } from './services/tray'
 import { getWindowState, saveWindowState } from './services/window-state'
 import { registerShortcuts } from './shortcuts'
 
@@ -12,15 +17,9 @@ import { registerShortcuts } from './shortcuts'
 const TITLE_BAR_HEIGHT = 44
 const isMac = process.platform === 'darwin'
 
-function appIcon(): Electron.NativeImage | undefined {
-  const file = [
-    join(import.meta.dirname, '../../resources/icon.png'),
-    join(process.resourcesPath, 'icon.png')
-  ].find((candidate) => existsSync(candidate))
-  if (!file) return undefined
-  const image = nativeImage.createFromPath(file)
-  return image.isEmpty() ? undefined : image
-}
+// 已经弹着询问框时不再叠加第二个；用户选过"关闭"的窗口不再二次询问
+let closePrompting = false
+const closingWindows = new WeakSet<BrowserWindow>()
 
 function chromeColors(): (typeof WINDOW_CHROME)[keyof typeof WINDOW_CHROME] {
   return nativeTheme.shouldUseDarkColors ? WINDOW_CHROME.dark : WINDOW_CHROME.light
@@ -44,6 +43,47 @@ function syncWindowChrome(window: BrowserWindow): void {
     window.setTitleBarOverlay(titleBarOverlay())
   } catch {
     /* 窗口已销毁或平台不支持覆盖层时保持系统默认控件 */
+  }
+}
+
+function hideToTray(window: BrowserWindow): void {
+  // 建不出托盘图标时退化成最小化，至少还能从任务栏点回来
+  if (!ensureTray()) {
+    window.minimize()
+    return
+  }
+  window.hide()
+}
+
+async function askCloseAction(window: BrowserWindow): Promise<void> {
+  if (closePrompting) return
+
+  const contents = window.webContents
+  // 页面还没起来或已经崩掉时问不出结果，直接按正常关闭处理，别把窗口卡死
+  if (contents.isDestroyed() || contents.isCrashed() || contents.isLoadingMainFrame()) {
+    closingWindows.add(window)
+    window.close()
+    return
+  }
+
+  closePrompting = true
+  try {
+    contents.send(NOTIFY.closeRequest)
+    const response = await waitCloseResponse()
+
+    if (response.action === 'cancel') return
+    if (response.remember) {
+      void patchSettings({ closeAction: response.action })
+    }
+    if (response.action === 'tray') {
+      hideToTray(window)
+      return
+    }
+    // 放行这一次 close，避免又被下面的处理器拦回来
+    closingWindows.add(window)
+    window.close()
+  } finally {
+    closePrompting = false
   }
 }
 
@@ -92,9 +132,28 @@ export function createMainWindow(): BrowserWindow {
   }
   nativeTheme.on('updated', onThemeUpdated)
 
-  window.on('close', () => saveWindowState(window))
+  // 右上角关闭、Alt+F4、任务栏关闭都走这里：先记住窗口状态，再按设置决定关还是收进托盘
+  window.on('close', (event) => {
+    saveWindowState(window)
+    if (isQuitting() || closingWindows.has(window)) return
 
-  window.on('closed', () => nativeTheme.off('updated', onThemeUpdated))
+    const action = readSettings().closeAction
+    if (action === 'quit') return
+    event.preventDefault()
+    if (action === 'tray') {
+      hideToTray(window)
+      return
+    }
+    void askCloseAction(window)
+  })
+
+  window.on('closed', () => {
+    cancelCloseRequest()
+    nativeTheme.off('updated', onThemeUpdated)
+  })
+
+  // 系统关机/重启时不能让询问框挡住退出流程
+  window.on('session-end', () => beginQuit())
 
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) {

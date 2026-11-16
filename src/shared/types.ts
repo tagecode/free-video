@@ -2,6 +2,7 @@ import type { ParseLine } from './schemas'
 
 export type {
   BuiltinLine,
+  CloseAction,
   FavoriteInput,
   FavoriteItem,
   HistoryItem,
@@ -58,6 +59,13 @@ export interface ImportResult {
   replaced: number
   kept: number
   skipped: number
+}
+
+export interface CloseResponse {
+  /** tray 收进托盘，quit 直接退出，cancel 继续用 */
+  action: 'tray' | 'quit' | 'cancel'
+  /** 用户勾了「记住我的选择」，主进程按 action 写回 closeAction */
+  remember: boolean
 }
 
 export interface AppInfo {

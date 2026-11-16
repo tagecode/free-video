@@ -114,6 +114,25 @@ export function SettingsPage(): React.JSX.Element {
             </SelectContent>
           </Select>
         </Row>
+        <Separator />
+        <Row
+          title="关闭窗口时"
+          description="点右上角关闭按钮后的行为；勾过「记住我的选择」也能在这里改回询问"
+        >
+          <Select
+            value={settings.closeAction}
+            onValueChange={(value) => set('closeAction', value as Settings['closeAction'])}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ask">每次询问</SelectItem>
+              <SelectItem value="tray">最小化到托盘</SelectItem>
+              <SelectItem value="quit">直接退出</SelectItem>
+            </SelectContent>
+          </Select>
+        </Row>
       </section>
 
       <section className="rounded-2xl border border-border/70 bg-card/50 px-4 py-2 backdrop-blur">

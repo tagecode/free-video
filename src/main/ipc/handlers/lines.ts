@@ -5,7 +5,7 @@ import { pickLinesFile, saveLinesFile } from '../../services/line-file'
 import { lineService } from '../../services/line-service'
 import { broadcast } from '../broadcast'
 import { handle } from '../register'
-import { loadSettings } from './settings'
+import { loadSettings } from '../../services/settings-service'
 
 function notifyLines(lines: ParseLine[]): ParseLine[] {
   broadcast(NOTIFY.linesChanged, lines)

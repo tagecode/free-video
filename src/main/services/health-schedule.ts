@@ -11,7 +11,7 @@ let startupTimer: NodeJS.Timeout | null = null
 
 async function runScheduledCheck(): Promise<void> {
   try {
-    const { readSettings } = await import('../ipc/handlers/settings')
+    const { readSettings } = await import('./settings-service')
     const settings = readSettings()
     const targets = lineService.enabled()
     if (targets.length === 0) return
@@ -41,7 +41,7 @@ export function startHealthSchedule(): void {
   startupTimer = setTimeout(() => {
     startupTimer = null
     void runScheduledCheck().finally(async () => {
-      const { readSettings } = await import('../ipc/handlers/settings')
+      const { readSettings } = await import('./settings-service')
       syncHealthInterval(readSettings().healthCheckIntervalMs)
     })
   }, STARTUP_DELAY_MS)

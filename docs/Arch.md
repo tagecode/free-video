@@ -208,6 +208,8 @@ app.whenReady()
 - 覆盖层**只画按钮、底色透明**（`color: '#00000000'`）：标题栏的半透明底、品牌光晕和下边框都由渲染进程绘制，覆盖层一旦填纯色就会在右上角盖出一块色差，并把它下方的下边框截断；
 - 主进程读不到 CSS 变量，窗口底色与按钮图案色镜像在 `shared/constants.ts` 的 `WINDOW_CHROME`，必须与 `main.css` 的 `--background` / `--muted-foreground` 保持一致，换主题时随 `nativeTheme` 一起更新；
 - 标题栏拖拽区用 CSS `-webkit-app-region: drag`，**所有可交互元素必须显式 `no-drag`**（见 §11 已知问题）；
+- 关闭窗口（右上角按钮 / `Alt+F4` / 任务栏）按 `settings.closeAction` 处理：`ask` 由渲染进程弹应用内询问框（可勾选「记住我的选择」）、`tray` 收进托盘、`quit` 直接退出；真正的退出（托盘退出、更新安装、首启声明里的「退出」）先 `beginQuit()` 置位，关窗逻辑据此跳过询问，否则退出会被自己拦住；
+- 托盘图标在第一次「最小化到托盘」时才创建（`services/tray.ts`，16/32 两档位图），菜单提供「显示主界面」与「退出」；窗口相关动作由 `index.ts` 注入，托盘服务不持有窗口引用；
 - 窗口 `resize` / `maximize` / `enter-full-screen` 事件统一转发给 `PlayerService` 重新计算播放容器 bounds。
 
 ### 5.3 服务说明

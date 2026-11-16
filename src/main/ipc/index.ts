@@ -4,15 +4,16 @@ import { registerFavoriteHandlers } from './handlers/favorites'
 import { registerHistoryHandlers } from './handlers/history'
 import { registerLineHandlers } from './handlers/lines'
 import { registerPlayerHandlers } from './handlers/player'
-import { loadSettings, patchSettings } from './handlers/settings'
+import { registerSettingsHandlers } from './handlers/settings'
 import { registerUpdaterHandlers } from './handlers/updater'
-import { handle } from './register'
+import { registerWindowHandlers } from './handlers/window'
 
 export function registerIpcHandlers(): void {
   registerAppHandlers()
 
-  handle('settings:get', () => loadSettings())
-  handle('settings:patch', (patch) => patchSettings(patch))
+  registerWindowHandlers()
+
+  registerSettingsHandlers()
 
   registerLineHandlers()
   registerPlayerHandlers()

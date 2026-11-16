@@ -6,7 +6,7 @@ import { lineService } from '../../services/line-service'
 import { playerService } from '../../services/player-service'
 import { fetchVideoTitle } from '../../services/video-title'
 import { handle } from '../register'
-import { loadSettings } from './settings'
+import { loadSettings } from '../../services/settings-service'
 
 export function registerPlayerHandlers(): void {
   handle('player:open', async (request): Promise<PlayResult> => {

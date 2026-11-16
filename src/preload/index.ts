@@ -12,11 +12,16 @@ function subscribe<T>(channel: string, callback: (payload: T) => void): () => vo
 const api: AppApi = {
   app: {
     platform: process.platform,
-    info: () => ipcRenderer.invoke('app:info')
+    info: () => ipcRenderer.invoke('app:info'),
+    quit: () => ipcRenderer.invoke('app:quit')
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
     patch: (patch) => ipcRenderer.invoke('settings:patch', patch)
+  },
+  window: {
+    onCloseRequest: (callback) => subscribe<null>(NOTIFY.closeRequest, () => callback()),
+    respondClose: (response) => ipcRenderer.invoke('window:close-response', response)
   },
   lines: {
     list: () => ipcRenderer.invoke('lines:list'),

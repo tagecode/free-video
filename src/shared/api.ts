@@ -1,5 +1,6 @@
 import type {
   AppInfo,
+  CloseResponse,
   FavoriteInput,
   FavoriteItem,
   HistoryItem,
@@ -21,10 +22,17 @@ export interface AppApi {
     // 同步可读，界面布局（标题栏留白）按平台模板决定，不能等异步 info
     platform: 'darwin' | 'win32' | 'linux' | string
     info: () => Promise<AppInfo>
+    // 绕过"关闭还是最小化到托盘"的询问，直接退出应用
+    quit: () => Promise<void>
   }
   settings: {
     get: () => Promise<Settings>
     patch: (patch: Partial<Settings>) => Promise<Settings>
+  }
+  window: {
+    // 主进程拦截关闭后广播，由页面弹出应用内询问框
+    onCloseRequest: (callback: () => void) => () => void
+    respondClose: (response: CloseResponse) => Promise<void>
   }
   lines: {
     list: () => Promise<ParseLine[]>

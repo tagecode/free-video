@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { AppInfo } from '@shared/types'
+import { beginQuit } from '../../lib/quit-state'
 import { handle } from '../register'
 
 /** 未打包运行时 app.getVersion() 会退回 Electron 自身的版本，界面上显示成 44.x */
@@ -22,4 +23,10 @@ export function registerAppHandlers(): void {
     userDataPath: app.getPath('userData'),
     isDev: !app.isPackaged
   }))
+
+  // 首启声明里的「退出」是明确的退出意图，不应再弹"关闭还是最小化到托盘"
+  handle('app:quit', () => {
+    beginQuit()
+    app.quit()
+  })
 }
